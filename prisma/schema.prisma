@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum TipoUsuario {
+  SERVIDOR_UERN
+  FORNECEDOR_EXTERNO
+}
+
+enum StatusUsuario {
+  PENDENTE_APROVACAO
+  ATIVO
+  BLOQUEADO
+}
+
+model UnidadeCentral {
+  id           String           @id @default(uuid())
+  codigo       String?          @unique
+  sigla        String           @unique // Ex: "PROAD", "FAFIC", "DINF", "CAMPUS-ASSU"
+  nome         String           // Nome por extenso
+  campus       String           // Mossoró, Assú, Caicó, Patu, Pau dos Ferros, Natal
+  email        String?
+  telefone     String?
+  predioNome   String?          // Ex: "Bloco Central", "Reitoria", "Complexo Cultural"
+  ativo        Boolean          @default(true)
+  criadoEm     DateTime         @default(now())
+  atualizadoEm DateTime         @updatedAt
+
+  usuarios     UsuarioCentral[]
+
+  @@map("portal_unidades")
+}
+
+model UsuarioCentral {
+  id              String          @id @default(uuid())
+  tipoUsuario     TipoUsuario     @default(SERVIDOR_UERN)
+  status          StatusUsuario   @default(PENDENTE_APROVACAO)
+
+  // Dados Pessoais / Conta
+  nome            String
+  email           String          @unique // Servidor: restrito a @uern.br; Fornecedor: corporativo
+  cpf             String          @unique // Validação real de dígitos verificadores
+  senhaHash       String?         // Hash bcrypt (obrigatório para fornecedor / senha mestre)
+  fotoUrl         String?
+  telefone        String?
+
+  // Exclusivo: Servidor UERN
+  matricula       String?         // Formato padronizado: xxxxxx-x
+  unidadeId       String?
+  unidade         UnidadeCentral? @relation(fields: [unidadeId], references: [id], onDelete: SetNull)
+
+  // Exclusivo: Fornecedor / Empresa Externa
+  cnpjEmpresa     String?         // CNPJ da empresa com validação de dígitos
+  razaoSocial     String?
+  nomeFantasia    String?
+  cargoPreposto   String?
+
+  // Matriz de Governança: Perfis específicos por Sistema
+  perfilSgc       String?         // ADMIN_PROAD, GESTOR, FISCAL_ADM, FISCAL_TECNICO, FISCAL_SETORIAL, GESTOR_ATA, FORNECEDOR
+  perfilManut     String?         // ADMIN, GESTOR_CONTRATO, FISCAL_ADM, FISCAL_TECNICO, FISCAL_SETORIAL, GESTOR_UNIDADE, DEMANDANTE, EMPRESA, TECNICO_SOBE
+  perfilPca       String?         // ADMIN, UNIDADE
+  permissoesPca   Json?           // Subpermissões finas de DFD ({ podeCriarDfd, podeEnviarDfd, etc })
+  perfilDiarias   String?         // ADMIN, DEMANDANTE, FISCAL, APROVADOR
+
+  // Auditoria e Controle de Acesso
+  criadoEm        DateTime        @default(now())
+  atualizadoEm    DateTime        @updatedAt
+  aprovadoEm      DateTime?
+  aprovadoPor     String?         // E-mail do Administrador que aprovou
+  motivoBloqueio  String?
+
+  logs            LogAuditoriaCentral[]
+
+  @@map("portal_usuarios")
+}
+
+model LogAuditoriaCentral {
+  id           String          @id @default(uuid())
+  usuarioId    String?
+  usuario      UsuarioCentral? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  usuarioEmail String
+  acao         String          // PRE_CADASTRO_SERVIDOR, CREDENCIAMENTO_FORNECEDOR, HOMOLOGACAO_ACESSO, ALTERACAO_PERFIL
+  detalhes     Json?
+  ip           String?
+  criadoEm     DateTime        @default(now())
+
+  @@map("portal_logs_auditoria")
+}
