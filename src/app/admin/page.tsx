@@ -28,6 +28,7 @@ import {
   Wrench,
   ShoppingBag,
   Plane,
+  History,
 } from 'lucide-react';
 import {
   validarCpf,
@@ -362,7 +363,16 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => router.push('/admin/auditoria')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-sm transition"
+              title="Acessar painel central de logs e auditoria"
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Auditoria Central</span>
+            </button>
             <button
               type="button"
               onClick={carregarDados}
@@ -491,6 +501,15 @@ export default function AdminPage() {
           >
             <Building2 className="w-4 h-4" />
             <span>Gestão de Unidades da UERN</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push('/admin/auditoria')}
+            className="flex-1 py-2.5 px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition text-indigo-300 hover:text-white hover:bg-white/5"
+          >
+            <History className="w-4 h-4 text-indigo-400" />
+            <span>Auditoria & Logs Centrais</span>
           </button>
         </div>
 

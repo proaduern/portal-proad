@@ -139,9 +139,36 @@ export async function PUT(
 
     await prisma.logAuditoriaCentral.create({
       data: {
+        sistema: 'PORTAL',
+        acao: 'EDICAO',
+        entidade: 'UsuarioCentral',
+        entidadeId: id,
+        entidadeNome: usuarioAtualizado.nome,
+        descricao: `Edição cadastral do usuário ${usuarioAtualizado.nome} (${usuarioAtualizado.email})`,
         usuarioId: admin.id,
+        usuarioNome: admin.nome,
         usuarioEmail: admin.email,
-        acao: 'EDITAR_USUARIO',
+        usuarioRole: admin.perfilSgc || 'ADMIN_PROAD',
+        unidadeSigla: admin.unidadeSigla || 'PROAD',
+        dadosAnteriores: {
+          nome: usuarioExistente.nome,
+          status: usuarioExistente.status,
+          perfilSgc: usuarioExistente.perfilSgc,
+          perfilManut: usuarioExistente.perfilManut,
+          perfilPca: usuarioExistente.perfilPca,
+          perfilDiarias: usuarioExistente.perfilDiarias,
+          unidadeId: usuarioExistente.unidadeId,
+        },
+        dadosNovos: {
+          nome: usuarioAtualizado.nome,
+          status: usuarioAtualizado.status,
+          perfilSgc: usuarioAtualizado.perfilSgc,
+          perfilManut: usuarioAtualizado.perfilManut,
+          perfilPca: usuarioAtualizado.perfilPca,
+          perfilDiarias: usuarioAtualizado.perfilDiarias,
+          unidadeId: usuarioAtualizado.unidadeId,
+        },
+        camposAlterados: Object.keys(dataToUpdate),
         detalhes: {
           alvoId: id,
           alvoEmail: usuarioAtualizado.email,

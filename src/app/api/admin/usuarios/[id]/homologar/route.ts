@@ -49,9 +49,20 @@ export async function POST(
 
       await prisma.logAuditoriaCentral.create({
         data: {
+          sistema: 'PORTAL',
+          acao: 'BLOQUEIO',
+          entidade: 'UsuarioCentral',
+          entidadeId: id,
+          entidadeNome: usuario.nome,
+          descricao: `Homologação indeferida/bloqueada para ${usuario.nome} (${usuario.email}). Motivo: ${motivoRejeicao || 'Não informado'}`,
           usuarioId: admin.id,
+          usuarioNome: admin.nome,
           usuarioEmail: admin.email,
-          acao: 'HOMOLOGACAO_REJEITADA',
+          usuarioRole: admin.perfilSgc || 'ADMIN_PROAD',
+          unidadeSigla: admin.unidadeSigla || 'PROAD',
+          dadosAnteriores: { status: usuario.status },
+          dadosNovos: { status: 'BLOQUEADO', motivoBloqueio: motivoRejeicao },
+          camposAlterados: ['status', 'motivoBloqueio'],
           detalhes: {
             alvoEmail: usuario.email,
             motivo: motivoRejeicao,
@@ -87,9 +98,32 @@ export async function POST(
 
     await prisma.logAuditoriaCentral.create({
       data: {
+        sistema: 'PORTAL',
+        acao: 'HOMOLOGACAO',
+        entidade: 'UsuarioCentral',
+        entidadeId: id,
+        entidadeNome: usuarioAprovado.nome,
+        descricao: `Homologação e concessão de perfis para ${usuarioAprovado.nome} (${usuarioAprovado.email})`,
         usuarioId: admin.id,
+        usuarioNome: admin.nome,
         usuarioEmail: admin.email,
-        acao: 'HOMOLOGACAO_APROVADA',
+        usuarioRole: admin.perfilSgc || 'ADMIN_PROAD',
+        unidadeSigla: admin.unidadeSigla || 'PROAD',
+        dadosAnteriores: {
+          status: usuario.status,
+          perfilSgc: usuario.perfilSgc,
+          perfilManut: usuario.perfilManut,
+          perfilPca: usuario.perfilPca,
+          perfilDiarias: usuario.perfilDiarias,
+        },
+        dadosNovos: {
+          status: 'ATIVO',
+          perfilSgc: usuarioAprovado.perfilSgc,
+          perfilManut: usuarioAprovado.perfilManut,
+          perfilPca: usuarioAprovado.perfilPca,
+          perfilDiarias: usuarioAprovado.perfilDiarias,
+        },
+        camposAlterados: ['status', 'perfilSgc', 'perfilManut', 'perfilPca', 'perfilDiarias'],
         detalhes: {
           alvoId: id,
           alvoEmail: usuarioAprovado.email,

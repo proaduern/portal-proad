@@ -81,14 +81,40 @@ model UsuarioCentral {
 }
 
 model LogAuditoriaCentral {
-  id           String          @id @default(uuid())
-  usuarioId    String?
-  usuario      UsuarioCentral? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-  usuarioEmail String
-  acao         String          // PRE_CADASTRO_SERVIDOR, CREDENCIAMENTO_FORNECEDOR, HOMOLOGACAO_ACESSO, ALTERACAO_PERFIL
-  detalhes     Json?
-  ip           String?
-  criadoEm     DateTime        @default(now())
+  id              String          @id @default(uuid())
+  sistema         String          @default("PORTAL") // PORTAL, SGC, PCA, MANUTENCAO, DIARIAS
+  acao            String          // CRIACAO, EDICAO, EXCLUSAO, ADITIVO, MEDICAO, HOMOLOGACAO, etc.
+  entidade        String?         // Contrato, Ata, Dfd, OrdemServico, Diaria, UsuarioCentral, etc.
+  entidadeId      String?
+  entidadeNome    String?         // Ex: "Contrato nº 12/2026", "OS nº 45/2026"
+  descricao       String          @default("") // Descrição textual amigável do evento
 
+  // QUEM (Dados de quem executou a ação)
+  usuarioId       String?
+  usuario         UsuarioCentral? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  usuarioNome     String?
+  usuarioEmail    String
+  usuarioRole     String?
+  unidadeSigla    String?
+
+  // O QUE MUDOU (Diff detalhado para conferência de divergências)
+  dadosAnteriores Json?           // Snapshot antes da alteração
+  dadosNovos      Json?           // Snapshot após a alteração
+  camposAlterados String[]        // Lista de campos que divergiram
+  detalhes        Json?           // Detalhes adicionais legados ou metadados extras
+
+  // ONDE (Rastreabilidade técnica)
+  ip              String?
+  userAgent       String?
+  rota            String?
+
+  // QUANDO
+  criadoEm        DateTime        @default(now())
+
+  @@index([sistema])
+  @@index([acao])
+  @@index([entidade, entidadeId])
+  @@index([usuarioEmail])
+  @@index([criadoEm])
   @@map("portal_logs_auditoria")
 }
