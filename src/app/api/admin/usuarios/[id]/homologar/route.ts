@@ -83,6 +83,59 @@ export async function POST(
       });
     }
 
+    // 1.1 SALVAR ALTERAÇÕES CADASTRAIS (mantendo status atual do usuário)
+    if (decisao === 'SALVAR') {
+      const dataUpdate: any = {};
+      if (nome && nome.trim()) dataUpdate.nome = nome.trim();
+      if (matricula !== undefined) {
+        dataUpdate.matricula = normalizarMatriculaUern(matricula) || matricula;
+      }
+      if (cpf) dataUpdate.cpf = formatarCpf(cpf);
+      if (telefone !== undefined) dataUpdate.telefone = telefone ? telefone.trim() : null;
+      if (unidadeId !== undefined) dataUpdate.unidadeId = unidadeId || null;
+
+      const usuarioAtualizado = await prisma.usuarioCentral.update({
+        where: { id },
+        data: dataUpdate,
+        include: { unidade: true },
+      });
+
+      await prisma.logAuditoriaCentral.create({
+        data: {
+          sistema: 'PORTAL',
+          acao: 'EDICAO_CADASTRO',
+          entidade: 'UsuarioCentral',
+          entidadeId: id,
+          entidadeNome: usuarioAtualizado.nome,
+          descricao: `Dados cadastrais de ${usuarioAtualizado.nome} (${usuarioAtualizado.email}) atualizados pelo administrador.`,
+          usuarioId: admin.id,
+          usuarioNome: admin.nome,
+          usuarioEmail: admin.email,
+          usuarioRole: admin.perfilSgc || 'ADMIN_PROAD',
+          unidadeSigla: admin.unidadeSigla || 'PROAD',
+          dadosAnteriores: {
+            nome: usuario.nome,
+            matricula: usuario.matricula,
+            cpf: usuario.cpf,
+            unidadeId: usuario.unidadeId,
+          },
+          dadosNovos: {
+            nome: usuarioAtualizado.nome,
+            matricula: usuarioAtualizado.matricula,
+            cpf: usuarioAtualizado.cpf,
+            unidadeId: usuarioAtualizado.unidadeId,
+          },
+          camposAlterados: ['nome', 'matricula', 'cpf', 'unidadeId'],
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Dados cadastrais de ${usuarioAtualizado.nome} atualizados com sucesso!`,
+        usuario: usuarioAtualizado,
+      });
+    }
+
     // 2. REJEITAR / BLOQUEAR
     if (decisao === 'REJEITAR') {
       const usuarioBloqueado = await prisma.usuarioCentral.update({

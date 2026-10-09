@@ -237,8 +237,8 @@ export default function AdminPage() {
     }
   };
 
-  // Submete homologação (Aprovação direta com edições, devolução com motivo, ou rejeição)
-  const handleConfirmarHomologacao = async (decisao: 'APROVAR' | 'DEVOLVER' | 'REJEITAR') => {
+  // Submete homologação (Aprovação com perfis, salvar dados mantendo pendente, devolução ou rejeição)
+  const handleConfirmarHomologacao = async (decisao: 'APROVAR' | 'DEVOLVER' | 'REJEITAR' | 'SALVAR') => {
     if (!modalHomologar) return;
     if (decisao === 'DEVOLVER' && !motivoDevolucao.trim()) {
       setErrorMsg('Por favor, informe a orientação ou motivo de devolução para o usuário.');
@@ -252,7 +252,7 @@ export default function AdminPage() {
         motivoRejeicao: decisao === 'REJEITAR' ? 'Documentação inconsistente ou perfil não reconhecido pela PROAD.' : undefined,
       };
 
-      if (decisao === 'APROVAR') {
+      if (decisao === 'APROVAR' || decisao === 'SALVAR') {
         payload.nome = homologarNome.trim();
         payload.cpf = homologarCpf.trim();
         payload.matricula = homologarMatricula.trim() || null;
@@ -261,11 +261,14 @@ export default function AdminPage() {
         payload.razaoSocial = homologarRazaoSocial.trim() || null;
         payload.cargoPreposto = homologarCargoPreposto.trim() || null;
         payload.unidadeId = homologarUnidadeId || undefined;
-        payload.perfilSgc = homologarSgc || null;
-        payload.perfilManut = homologarManut || null;
-        payload.perfilPca = homologarPca || null;
-        payload.permissoesPca = homologarPca ? homologarPcaPerms : null;
-        payload.perfilDiarias = homologarDiarias || null;
+
+        if (decisao === 'APROVAR') {
+          payload.perfilSgc = homologarSgc || null;
+          payload.perfilManut = homologarManut || null;
+          payload.perfilPca = homologarPca || null;
+          payload.permissoesPca = homologarPca ? homologarPcaPerms : null;
+          payload.perfilDiarias = homologarDiarias || null;
+        }
       }
 
       const res = await fetch(`/api/admin/usuarios/${modalHomologar.id}/homologar`, {
@@ -669,7 +672,16 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleAbrirHomologar(u)}
+                        className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 transition"
+                        title="Editar nome, matrícula, CPF ou unidade antes de homologar"
+                      >
+                        <Edit className="w-4 h-4 text-amber-400" />
+                        <span>Editar Dados</span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleAbrirHomologar(u)}
@@ -1411,13 +1423,23 @@ export default function AdminPage() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
                 <button
                   type="button"
                   onClick={() => setModalHomologar(null)}
-                  className="px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-xs text-slate-300 transition"
+                  className="px-3.5 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-xs text-slate-300 transition"
                 >
                   Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleConfirmarHomologacao('SALVAR')}
+                  disabled={submetendo || modoDevolver}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-bold text-xs flex items-center gap-1.5 transition disabled:opacity-50"
+                  title="Salvar alterações cadastrais mantendo o cadastro na fila de análise"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>{submetendo ? 'Salvando...' : 'Salvar Dados (Manter Pendente)'}</span>
                 </button>
                 <button
                   type="button"
