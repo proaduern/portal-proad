@@ -68,7 +68,10 @@ export async function GET(request: NextRequest) {
 
     const contadores = {
       total: await prisma.usuarioCentral.count(),
-      pendentes: await prisma.usuarioCentral.count({ where: { status: 'PENDENTE_APROVACAO' } }),
+      pendentes: await prisma.usuarioCentral.count({
+        where: { status: { in: ['PENDENTE_APROVACAO', 'DEVOLVIDO_CORRECAO'] } },
+      }),
+      devolvidos: await prisma.usuarioCentral.count({ where: { status: 'DEVOLVIDO_CORRECAO' } }),
       ativos: await prisma.usuarioCentral.count({ where: { status: 'ATIVO' } }),
       bloqueados: await prisma.usuarioCentral.count({ where: { status: 'BLOQUEADO' } }),
       servidores: await prisma.usuarioCentral.count({ where: { tipoUsuario: 'SERVIDOR_UERN' } }),

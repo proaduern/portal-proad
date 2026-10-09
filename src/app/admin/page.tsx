@@ -29,6 +29,7 @@ import {
   ShoppingBag,
   Plane,
   History,
+  LogOut,
 } from 'lucide-react';
 import {
   validarCpf,
@@ -37,6 +38,7 @@ import {
   formatarCpf,
   formatarCnpj,
   formatarMatricula,
+  normalizarMatriculaUern,
 } from '@/lib/validators';
 
 interface Unidade {
@@ -58,7 +60,7 @@ interface Usuario {
   email: string;
   cpf: string;
   tipoUsuario: 'SERVIDOR_UERN' | 'FORNECEDOR_EXTERNO';
-  status: 'PENDENTE_APROVACAO' | 'ATIVO' | 'BLOQUEADO';
+  status: 'PENDENTE_APROVACAO' | 'DEVOLVIDO_CORRECAO' | 'ATIVO' | 'BLOQUEADO';
   matricula?: string | null;
   telefone?: string | null;
   unidadeId?: string | null;
@@ -79,6 +81,8 @@ interface Usuario {
   perfilDiarias?: string | null;
   criadoEm: string;
   motivoBloqueio?: string | null;
+  motivoDevolucao?: string | null;
+  dataDevolucao?: string | null;
 }
 
 export default function AdminPage() {
@@ -122,6 +126,15 @@ export default function AdminPage() {
   });
   const [homologarDiarias, setHomologarDiarias] = useState('');
   const [homologarUnidadeId, setHomologarUnidadeId] = useState('');
+  const [homologarNome, setHomologarNome] = useState('');
+  const [homologarCpf, setHomologarCpf] = useState('');
+  const [homologarMatricula, setHomologarMatricula] = useState('');
+  const [homologarTelefone, setHomologarTelefone] = useState('');
+  const [homologarCnpj, setHomologarCnpj] = useState('');
+  const [homologarRazaoSocial, setHomologarRazaoSocial] = useState('');
+  const [homologarCargoPreposto, setHomologarCargoPreposto] = useState('');
+  const [modoDevolver, setModoDevolver] = useState(false);
+  const [motivoDevolucao, setMotivoDevolucao] = useState('');
   const [submetendo, setSubmetendo] = useState(false);
 
   // Estados de formulário para Criar/Editar Unidade
@@ -151,7 +164,7 @@ export default function AdminPage() {
     perfilManut: '',
     perfilPca: '',
     perfilDiarias: '',
-    status: 'ATIVO' as 'ATIVO' | 'BLOQUEADO' | 'PENDENTE_APROVACAO',
+    status: 'ATIVO' as 'ATIVO' | 'BLOQUEADO' | 'PENDENTE_APROVACAO' | 'DEVOLVIDO_CORRECAO',
     motivoBloqueio: '',
   });
 
@@ -185,6 +198,14 @@ export default function AdminPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } finally {
+      router.push('/');
+    }
+  };
+
   useEffect(() => {
     carregarDados();
   }, [searchQuery, filtroTipo, filtroStatus]);
@@ -192,7 +213,17 @@ export default function AdminPage() {
   // Abre modal de homologação
   const handleAbrirHomologar = (u: Usuario) => {
     setModalHomologar(u);
+    setHomologarNome(u.nome || '');
+    setHomologarCpf(u.cpf || '');
+    setHomologarMatricula(u.matricula || '');
+    setHomologarTelefone(u.telefone || '');
+    setHomologarCnpj(u.cnpjEmpresa || '');
+    setHomologarRazaoSocial(u.razaoSocial || '');
+    setHomologarCargoPreposto(u.cargoPreposto || '');
     setHomologarUnidadeId(u.unidadeId || '');
+    setModoDevolver(false);
+    setMotivoDevolucao(u.motivoDevolucao || '');
+
     if (u.tipoUsuario === 'SERVIDOR_UERN') {
       setHomologarSgc(u.perfilSgc || 'FISCAL_TECNICO');
       setHomologarManut(u.perfilManut || 'GESTOR_UNIDADE');
@@ -206,24 +237,41 @@ export default function AdminPage() {
     }
   };
 
-  // Submete homologação
-  const handleConfirmarHomologacao = async (decisao: 'APROVAR' | 'REJEITAR') => {
+  // Submete homologação (Aprovação direta com edições, devolução com motivo, ou rejeição)
+  const handleConfirmarHomologacao = async (decisao: 'APROVAR' | 'DEVOLVER' | 'REJEITAR') => {
     if (!modalHomologar) return;
+    if (decisao === 'DEVOLVER' && !motivoDevolucao.trim()) {
+      setErrorMsg('Por favor, informe a orientação ou motivo de devolução para o usuário.');
+      return;
+    }
     setSubmetendo(true);
     try {
+      const payload: any = {
+        decisao,
+        motivoDevolucao: decisao === 'DEVOLVER' ? motivoDevolucao.trim() : undefined,
+        motivoRejeicao: decisao === 'REJEITAR' ? 'Documentação inconsistente ou perfil não reconhecido pela PROAD.' : undefined,
+      };
+
+      if (decisao === 'APROVAR') {
+        payload.nome = homologarNome.trim();
+        payload.cpf = homologarCpf.trim();
+        payload.matricula = homologarMatricula.trim() || null;
+        payload.telefone = homologarTelefone.trim() || null;
+        payload.cnpjEmpresa = homologarCnpj.trim() || null;
+        payload.razaoSocial = homologarRazaoSocial.trim() || null;
+        payload.cargoPreposto = homologarCargoPreposto.trim() || null;
+        payload.unidadeId = homologarUnidadeId || undefined;
+        payload.perfilSgc = homologarSgc || null;
+        payload.perfilManut = homologarManut || null;
+        payload.perfilPca = homologarPca || null;
+        payload.permissoesPca = homologarPca ? homologarPcaPerms : null;
+        payload.perfilDiarias = homologarDiarias || null;
+      }
+
       const res = await fetch(`/api/admin/usuarios/${modalHomologar.id}/homologar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          decisao,
-          motivoRejeicao: decisao === 'REJEITAR' ? 'Documentação inconsistente ou perfil não reconhecido pela PROAD.' : undefined,
-          unidadeId: homologarUnidadeId || undefined,
-          perfilSgc: homologarSgc || null,
-          perfilManut: homologarManut || null,
-          perfilPca: homologarPca || null,
-          permissoesPca: homologarPca ? homologarPcaPerms : null,
-          perfilDiarias: homologarDiarias || null,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -331,7 +379,9 @@ export default function AdminPage() {
     }
   };
 
-  const pendentes = usuarios.filter((u) => u.status === 'PENDENTE_APROVACAO');
+  const pendentes = usuarios.filter(
+    (u) => u.status === 'PENDENTE_APROVACAO' || u.status === 'DEVOLVIDO_CORRECAO'
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
@@ -387,6 +437,15 @@ export default function AdminPage() {
               className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition"
             >
               Ir ao Hub
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-500/30 text-xs font-semibold text-red-300 transition"
+              title="Encerrar sessão"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sair</span>
             </button>
           </div>
         </div>
@@ -543,7 +602,7 @@ export default function AdminPage() {
                     className="p-5 rounded-2xl bg-slate-900/90 border border-amber-500/30 hover:border-amber-500/60 transition flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg"
                   >
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex flex-wrap items-center gap-2.5">
                         <span
                           className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                             u.tipoUsuario === 'SERVIDOR_UERN'
@@ -553,12 +612,25 @@ export default function AdminPage() {
                         >
                           {u.tipoUsuario === 'SERVIDOR_UERN' ? 'Servidor UERN' : 'Empresa / Fornecedor'}
                         </span>
+                        {u.status === 'DEVOLVIDO_CORRECAO' && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-500/20 text-orange-300 border border-orange-500/40 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3 text-orange-400" />
+                            Aguardando Correção do Usuário
+                          </span>
+                        )}
                         <span className="text-xs text-slate-500">
                           Enviado em {new Date(u.criadoEm).toLocaleDateString('pt-BR')}
                         </span>
                       </div>
 
                       <h3 className="text-base font-bold text-white">{u.nome}</h3>
+
+                      {u.status === 'DEVOLVIDO_CORRECAO' && u.motivoDevolucao && (
+                        <div className="p-2.5 rounded-xl bg-orange-950/40 border border-orange-500/30 text-xs text-orange-200">
+                          <strong className="text-orange-400">Orientação de devolução: </strong>
+                          <span>{u.motivoDevolucao}</span>
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-1 text-xs text-slate-300">
                         <div>
@@ -688,6 +760,7 @@ export default function AdminPage() {
                 <option value="">Todos os Status</option>
                 <option value="ATIVO">Ativos</option>
                 <option value="PENDENTE_APROVACAO">Pendentes</option>
+                <option value="DEVOLVIDO_CORRECAO">Devolvidos p/ Correção</option>
                 <option value="BLOQUEADO">Bloqueados</option>
               </select>
             </div>
@@ -771,6 +844,8 @@ export default function AdminPage() {
                                 ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
                                 : u.status === 'PENDENTE_APROVACAO'
                                 ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                                : u.status === 'DEVOLVIDO_CORRECAO'
+                                ? 'bg-orange-500/10 text-orange-300 border border-orange-500/30'
                                 : 'bg-red-500/10 text-red-300 border border-red-500/30'
                             }`}
                           >
@@ -778,13 +853,15 @@ export default function AdminPage() {
                               ? 'Ativo'
                               : u.status === 'PENDENTE_APROVACAO'
                               ? 'Pendente'
+                              : u.status === 'DEVOLVIDO_CORRECAO'
+                              ? 'Devolvido p/ Correção'
                               : 'Bloqueado'}
                           </span>
                         </td>
 
                         <td className="p-3.5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            {u.status === 'PENDENTE_APROVACAO' ? (
+                            {u.status === 'PENDENTE_APROVACAO' || u.status === 'DEVOLVIDO_CORRECAO' ? (
                               <button
                                 type="button"
                                 onClick={() => handleAbrirHomologar(u)}
@@ -971,51 +1048,167 @@ export default function AdminPage() {
               </button>
             </div>
 
-            {/* Resumo do Solicitante */}
-            <div className="bg-slate-950/80 rounded-xl p-3.5 border border-white/10 text-xs space-y-2 mb-5">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-slate-400">Nome: </span>
-                  <span className="text-white font-bold">{modalHomologar.nome}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400">E-mail: </span>
-                  <span className="text-amber-300 font-medium">{modalHomologar.email}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400">CPF: </span>
-                  <span className="text-white">{modalHomologar.cpf}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400">
-                    {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' ? 'Matrícula: ' : 'CNPJ: '}
-                  </span>
-                  <span className="text-white">
-                    {modalHomologar.matricula || modalHomologar.cnpjEmpresa || '—'}
-                  </span>
-                </div>
+            {/* Instrução e Dica de Governança */}
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200 flex items-start gap-2.5 mb-4">
+              <Sliders className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-amber-300">Conferência e Correção Cadastral:</strong>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  Você pode corrigir pequenos erros de digitação (ex: nome incompleto, matrícula sem zeros) diretamente nos campos abaixo antes de aprovar, ou clicar em <strong>Devolver p/ Correção</strong> para que o próprio usuário retifique.
+                </p>
               </div>
             </div>
 
-            {/* Ajuste de Unidade (para servidores) */}
-            {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' && (
-              <div className="mb-5">
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Confirmar / Ajustar Unidade de Lotação na UERN:
-                </label>
-                <select
-                  value={homologarUnidadeId}
-                  onChange={(e) => setHomologarUnidadeId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white outline-none focus:border-amber-500"
-                >
-                  {unidades.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.sigla} - {u.nome} ({u.campus})
-                    </option>
-                  ))}
-                </select>
+            {/* Campos Cadastrais Editáveis */}
+            <div className="bg-slate-950/80 rounded-xl p-4 border border-white/10 text-xs space-y-3 mb-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Nome Completo do Usuário / Servidor *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={homologarNome}
+                    onChange={(e) => setHomologarNome(e.target.value)}
+                    placeholder="Ex: Mário Sérgio Leite"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-medium outline-none focus:border-amber-500"
+                  />
+                  {homologarNome && !homologarNome.trim().includes(' ') && (
+                    <span className="text-[10px] text-amber-400 mt-1 block">
+                      Atenção: Apenas um nome foi informado. Recomenda-se preencher o nome completo de registro civil.
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    E-mail Institucional (Login Google)
+                  </label>
+                  <input
+                    type="text"
+                    disabled
+                    value={modalHomologar.email}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/50 border border-slate-800 text-xs text-amber-300/80 cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    CPF *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={homologarCpf}
+                    onChange={(e) => setHomologarCpf(formatarCpf(e.target.value))}
+                    maxLength={14}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' ? (
+                  <>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        Matrícula UERN (Preenchimento inteligente)
+                      </label>
+                      <input
+                        type="text"
+                        value={homologarMatricula}
+                        onChange={(e) => setHomologarMatricula(e.target.value)}
+                        onBlur={(e) => setHomologarMatricula(normalizarMatriculaUern(e.target.value))}
+                        placeholder="Ex: 81558 -> 008155-8"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono outline-none focus:border-amber-500"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-0.5 block">Zeros automáticos ao sair do campo</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        Telefone / WhatsApp
+                      </label>
+                      <input
+                        type="text"
+                        value={homologarTelefone}
+                        onChange={(e) => setHomologarTelefone(e.target.value)}
+                        placeholder="(84) 99999-9999"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        Unidade de Lotação na UERN *
+                      </label>
+                      <select
+                        value={homologarUnidadeId}
+                        onChange={(e) => setHomologarUnidadeId(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-amber-500 cursor-pointer"
+                      >
+                        <option value="">Selecione a Unidade...</option>
+                        {unidades.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.sigla} - {u.nome} ({u.campus})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        CNPJ da Empresa
+                      </label>
+                      <input
+                        type="text"
+                        value={homologarCnpj}
+                        onChange={(e) => setHomologarCnpj(formatarCnpj(e.target.value))}
+                        maxLength={18}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        Razão Social
+                      </label>
+                      <input
+                        type="text"
+                        value={homologarRazaoSocial}
+                        onChange={(e) => setHomologarRazaoSocial(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        Cargo / Função do Preposto
+                      </label>
+                      <input
+                        type="text"
+                        value={homologarCargoPreposto}
+                        onChange={(e) => setHomologarCargoPreposto(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        Telefone de Contato
+                      </label>
+                      <input
+                        type="text"
+                        value={homologarTelefone}
+                        onChange={(e) => setHomologarTelefone(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Matriz de Perfis por Sistema */}
             <div className="space-y-4 mb-6">
@@ -1148,18 +1341,77 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Ações do Modal */}
-            <div className="flex items-center justify-between pt-3 border-t border-white/10">
-              <button
-                type="button"
-                onClick={() => handleConfirmarHomologacao('REJEITAR')}
-                disabled={submetendo}
-                className="px-4 py-2 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 text-xs font-semibold transition"
-              >
-                Indeferir / Rejeitar
-              </button>
+            {/* Caixa de Devolução (quando acionado pelo Admin) */}
+            {modoDevolver && (
+              <div className="p-4 rounded-xl bg-orange-950/60 border border-orange-500/40 space-y-3 mb-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-orange-300 text-xs font-bold">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Devolver Cadastro para Retificação pelo Servidor</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setModoDevolver(false)}
+                    className="text-xs text-slate-400 hover:text-white"
+                  >
+                    Voltar
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  Informe a orientação clara para o usuário (ex: digitar nome civil completo, corrigir número de matrícula ou selecionar unidade de lotação correta). O usuário verá este aviso no login e poderá retificar e reenviar.
+                </p>
+                <textarea
+                  rows={3}
+                  value={motivoDevolucao}
+                  onChange={(e) => setMotivoDevolucao(e.target.value)}
+                  placeholder="Ex: Prezado servidor, por favor informe seu nome completo de registro civil por extenso e verifique o dígito da matrícula..."
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-orange-500/40 text-xs text-white placeholder-slate-500 outline-none focus:border-orange-400"
+                />
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setModoDevolver(false)}
+                    className="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-xs text-slate-300 transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmarHomologacao('DEVOLVER')}
+                    disabled={submetendo || !motivoDevolucao.trim()}
+                    className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow transition disabled:opacity-50"
+                  >
+                    <span>{submetendo ? 'Devolvendo...' : 'Confirmar Devolução ao Usuário'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
-              <div className="flex items-center gap-2">
+            {/* Ações do Modal */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-white/10">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleConfirmarHomologacao('REJEITAR')}
+                  disabled={submetendo}
+                  className="px-3.5 py-2 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 text-xs font-semibold transition"
+                >
+                  Indeferir / Rejeitar
+                </button>
+                {!modoDevolver && (
+                  <button
+                    type="button"
+                    onClick={() => setModoDevolver(true)}
+                    disabled={submetendo}
+                    className="px-3.5 py-2 rounded-xl bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/40 text-orange-200 text-xs font-bold transition flex items-center gap-1"
+                  >
+                    <AlertCircle className="w-3.5 h-3.5 text-orange-400" />
+                    <span>Devolver p/ Correção</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                 <button
                   type="button"
                   onClick={() => setModalHomologar(null)}
@@ -1170,8 +1422,8 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => handleConfirmarHomologacao('APROVAR')}
-                  disabled={submetendo}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow transition"
+                  disabled={submetendo || modoDevolver}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow transition disabled:opacity-50"
                 >
                   <Check className="w-4 h-4" />
                   <span>{submetendo ? 'Homologando...' : 'Aprovar e Liberar Acessos'}</span>

@@ -14,7 +14,7 @@ export interface SessionPayload {
   email: string;
   cpf: string;
   tipoUsuario: 'SERVIDOR_UERN' | 'FORNECEDOR_EXTERNO';
-  status: 'PENDENTE_APROVACAO' | 'ATIVO' | 'BLOQUEADO';
+  status: 'PENDENTE_APROVACAO' | 'DEVOLVIDO_CORRECAO' | 'ATIVO' | 'BLOQUEADO';
   matricula?: string | null;
   unidadeId?: string | null;
   unidadeSigla?: string | null;
@@ -90,6 +90,11 @@ export async function verifyAdminSession(): Promise<SessionPayload | null> {
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = cookies();
   cookieStore.delete(COOKIE_NAME);
+  cookieStore.set(COOKIE_NAME, '', {
+    path: '/',
+    maxAge: 0,
+    expires: new Date(0),
+  });
 }
 
 /**

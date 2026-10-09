@@ -54,10 +54,12 @@ export async function POST(request: NextRequest) {
         perfilManut: fornecedor.perfilManut,
       });
 
-      if (fornecedor.status === 'PENDENTE_APROVACAO') {
+      if (fornecedor.status === 'PENDENTE_APROVACAO' || fornecedor.status === 'DEVOLVIDO_CORRECAO') {
         return NextResponse.json({
-          status: 'PENDENTE_APROVACAO',
-          mensagem: 'Sua solicitação de credenciamento está em análise pela equipe da PROAD.',
+          status: fornecedor.status,
+          mensagem: fornecedor.status === 'DEVOLVIDO_CORRECAO'
+            ? 'Seu cadastro possui pendências a corrigir antes da homologação.'
+            : 'Sua solicitação de credenciamento está em análise pela equipe da PROAD.',
           redirect: '/quarentena',
         });
       }

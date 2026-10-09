@@ -7,6 +7,7 @@ import {
   validarMatricula,
   formatarCpf,
   formatarMatricula,
+  normalizarMatriculaUern,
 } from '@/lib/validators';
 
 export const dynamic = 'force-dynamic';
@@ -42,10 +43,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Validação da Matrícula no padrão xxxxxx-x
-    if (!validarMatricula(matricula)) {
+    // 4. Normalização da Matrícula no padrão oficial xxxxxx-x
+    const matriculaFormatada = normalizarMatriculaUern(matricula);
+    if (!validarMatricula(matriculaFormatada)) {
       return NextResponse.json(
-        { error: 'A matrícula deve seguir o padrão funcional da UERN: 6 dígitos seguidos de hífen e dígito (exemplo: 123456-7).' },
+        { error: 'A matrícula deve conter números válidos da UERN (exemplo: 8155-8 ou 008155-8).' },
         { status: 400 }
       );
     }
@@ -58,49 +60,76 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unidade de lotação selecionada não foi encontrada.' }, { status: 404 });
     }
 
-    // 6. Verifica unicidade de e-mail e CPF
     const cpfFormatado = formatarCpf(cpf);
-    const matriculaFormatada = formatarMatricula(matricula);
 
-    const duplicado = await prisma.usuarioCentral.findFirst({
-      where: {
-        OR: [{ email: emailLimpo }, { cpf: cpfFormatado }],
-      },
+    // 6. Verifica se o usuário já existe
+    const usuarioExistente = await prisma.usuarioCentral.findUnique({
+      where: { email: emailLimpo },
     });
 
-    if (duplicado) {
-      if (duplicado.email === emailLimpo) {
-        return NextResponse.json({ error: 'Já existe um cadastro com este e-mail institucional.' }, { status: 409 });
+    let usuarioSalvo: any;
+
+    if (usuarioExistente) {
+      // Se já estiver ativo ou bloqueado, não permite recadastro
+      if (usuarioExistente.status === 'ATIVO' || usuarioExistente.status === 'BLOQUEADO') {
+        return NextResponse.json(
+          { error: 'Este e-mail institucional já possui cadastro ativo ou bloqueado no sistema.' },
+          { status: 409 }
+        );
       }
-      return NextResponse.json({ error: 'Já existe um cadastro com este número de CPF.' }, { status: 409 });
-    }
 
-    // 7. Cria o usuário com status PENDENTE_APROVACAO
-    const novoUsuario = await prisma.usuarioCentral.create({
-      data: {
-        tipoUsuario: 'SERVIDOR_UERN',
-        status: 'PENDENTE_APROVACAO',
-        nome: nome.trim(),
-        email: emailLimpo,
-        cpf: cpfFormatado,
-        matricula: matriculaFormatada,
-        telefone: telefone ? telefone.trim() : null,
-        fotoUrl: fotoUrl || null,
-        unidadeId: unidade.id,
-      },
-      include: { unidade: true },
-    });
+      // Se estiver PENDENTE_APROVACAO ou DEVOLVIDO_CORRECAO, permite atualizar os dados (edição pelo próprio usuário)
+      usuarioSalvo = await prisma.usuarioCentral.update({
+        where: { id: usuarioExistente.id },
+        data: {
+          nome: nome.trim(),
+          cpf: cpfFormatado,
+          matricula: matriculaFormatada,
+          unidadeId: unidade.id,
+          telefone: telefone ? telefone.trim() : null,
+          fotoUrl: fotoUrl || usuarioExistente.fotoUrl,
+          status: 'PENDENTE_APROVACAO',
+          motivoDevolucao: null,
+          dataDevolucao: null,
+        },
+        include: { unidade: true },
+      });
+    } else {
+      // Verifica unicidade de CPF para novos cadastros
+      const cpfDuplicado = await prisma.usuarioCentral.findUnique({
+        where: { cpf: cpfFormatado },
+      });
+      if (cpfDuplicado) {
+        return NextResponse.json({ error: 'Já existe um cadastro com este número de CPF.' }, { status: 409 });
+      }
+
+      // 7. Cria novo usuário com status PENDENTE_APROVACAO
+      usuarioSalvo = await prisma.usuarioCentral.create({
+        data: {
+          tipoUsuario: 'SERVIDOR_UERN',
+          status: 'PENDENTE_APROVACAO',
+          nome: nome.trim(),
+          email: emailLimpo,
+          cpf: cpfFormatado,
+          matricula: matriculaFormatada,
+          telefone: telefone ? telefone.trim() : null,
+          fotoUrl: fotoUrl || null,
+          unidadeId: unidade.id,
+        },
+        include: { unidade: true },
+      });
+    }
 
     // 8. Registra Auditoria
     await prisma.logAuditoriaCentral.create({
       data: {
-        usuarioId: novoUsuario.id,
-        usuarioEmail: novoUsuario.email,
-        acao: 'PRE_CADASTRO_SERVIDOR',
+        usuarioId: usuarioSalvo.id,
+        usuarioEmail: usuarioSalvo.email,
+        acao: usuarioExistente ? 'EDICAO_AUTO_CADASTRO' : 'PRE_CADASTRO_SERVIDOR',
         detalhes: {
-          nome: novoUsuario.nome,
-          matricula: novoUsuario.matricula,
-          cpf: novoUsuario.cpf,
+          nome: usuarioSalvo.nome,
+          matricula: usuarioSalvo.matricula,
+          cpf: usuarioSalvo.cpf,
           unidadeSigla: unidade.sigla,
         },
       },
@@ -108,14 +137,14 @@ export async function POST(request: NextRequest) {
 
     // 9. Configura sessão com status de quarentena
     await setSessionCookie({
-      id: novoUsuario.id,
-      nome: novoUsuario.nome,
-      email: novoUsuario.email,
-      cpf: novoUsuario.cpf,
-      tipoUsuario: novoUsuario.tipoUsuario,
-      status: novoUsuario.status,
-      matricula: novoUsuario.matricula,
-      unidadeId: novoUsuario.unidadeId,
+      id: usuarioSalvo.id,
+      nome: usuarioSalvo.nome,
+      email: usuarioSalvo.email,
+      cpf: usuarioSalvo.cpf,
+      tipoUsuario: usuarioSalvo.tipoUsuario,
+      status: usuarioSalvo.status,
+      matricula: usuarioSalvo.matricula,
+      unidadeId: usuarioSalvo.unidadeId,
       unidadeSigla: unidade.sigla,
       unidadeNome: unidade.nome,
     });

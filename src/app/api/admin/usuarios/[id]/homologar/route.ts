@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminSession } from '@/lib/auth';
+import { normalizarMatriculaUern, formatarCpf } from '@/lib/validators';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,14 +18,19 @@ export async function POST(
     const { id } = params;
     const body = await request.json();
     const {
-      decisao, // 'APROVAR' | 'REJEITAR'
+      decisao, // 'APROVAR' | 'REJEITAR' | 'DEVOLVER'
       motivoRejeicao,
+      motivoDevolucao,
+      nome,
+      matricula,
+      cpf,
+      telefone,
+      unidadeId,
       perfilSgc,
       perfilManut,
       perfilPca,
       permissoesPca,
       perfilDiarias,
-      unidadeId, // Permite ao admin ajustar a unidade do servidor se necessário
     } = body;
 
     const usuario = await prisma.usuarioCentral.findUnique({
@@ -36,6 +42,48 @@ export async function POST(
       return NextResponse.json({ error: 'Usuário não localizado.' }, { status: 404 });
     }
 
+    // 1. DEVOLVER PARA CORREÇÃO PELO USUÁRIO
+    if (decisao === 'DEVOLVER') {
+      const usuarioDevolvido = await prisma.usuarioCentral.update({
+        where: { id },
+        data: {
+          status: 'DEVOLVIDO_CORRECAO',
+          motivoDevolucao: motivoDevolucao || 'Favor revisar e corrigir os dados informados no seu cadastro.',
+          dataDevolucao: new Date(),
+        },
+      });
+
+      await prisma.logAuditoriaCentral.create({
+        data: {
+          sistema: 'PORTAL',
+          acao: 'DEVOLUCAO_CADASTRO',
+          entidade: 'UsuarioCentral',
+          entidadeId: id,
+          entidadeNome: usuario.nome,
+          descricao: `Cadastro de ${usuario.nome} devolvido para correção pelo próprio usuário. Motivo: ${motivoDevolucao}`,
+          usuarioId: admin.id,
+          usuarioNome: admin.nome,
+          usuarioEmail: admin.email,
+          usuarioRole: admin.perfilSgc || 'ADMIN_PROAD',
+          unidadeSigla: admin.unidadeSigla || 'PROAD',
+          dadosAnteriores: { status: usuario.status },
+          dadosNovos: { status: 'DEVOLVIDO_CORRECAO', motivoDevolucao },
+          camposAlterados: ['status', 'motivoDevolucao'],
+          detalhes: {
+            alvoEmail: usuario.email,
+            motivo: motivoDevolucao,
+          },
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Cadastro de ${usuario.nome} devolvido com sucesso para que o próprio usuário efetue as correções.`,
+        usuario: usuarioDevolvido,
+      });
+    }
+
+    // 2. REJEITAR / BLOQUEAR
     if (decisao === 'REJEITAR') {
       const usuarioBloqueado = await prisma.usuarioCentral.update({
         where: { id },
@@ -77,22 +125,31 @@ export async function POST(
       });
     }
 
-    // Fluxo de Aprovação:
-    // Pelo menos 1 perfil em algum sistema deve ser concedido (ou perfil padrao para fornecedor)
+    // 3. APROVAÇÃO E HOMOLOGAÇÃO (com suporte a edição cadastral direta pelo admin)
+    const dataUpdate: any = {
+      status: 'ATIVO',
+      motivoBloqueio: null,
+      motivoDevolucao: null,
+      aprovadoEm: new Date(),
+      aprovadoPor: admin.email,
+      perfilSgc: perfilSgc || null,
+      perfilManut: perfilManut || null,
+      perfilPca: perfilPca || null,
+      permissoesPca: permissoesPca || null,
+      perfilDiarias: perfilDiarias || null,
+    };
+
+    if (nome && nome.trim()) dataUpdate.nome = nome.trim();
+    if (matricula !== undefined) {
+      dataUpdate.matricula = normalizarMatriculaUern(matricula) || matricula;
+    }
+    if (cpf) dataUpdate.cpf = formatarCpf(cpf);
+    if (telefone !== undefined) dataUpdate.telefone = telefone ? telefone.trim() : null;
+    if (unidadeId !== undefined) dataUpdate.unidadeId = unidadeId || null;
+
     const usuarioAprovado = await prisma.usuarioCentral.update({
       where: { id },
-      data: {
-        status: 'ATIVO',
-        motivoBloqueio: null,
-        aprovadoEm: new Date(),
-        aprovadoPor: admin.email,
-        unidadeId: unidadeId !== undefined ? (unidadeId || null) : usuario.unidadeId,
-        perfilSgc: perfilSgc || null,
-        perfilManut: perfilManut || null,
-        perfilPca: perfilPca || null,
-        permissoesPca: permissoesPca || null,
-        perfilDiarias: perfilDiarias || null,
-      },
+      data: dataUpdate,
       include: { unidade: true },
     });
 
@@ -111,6 +168,10 @@ export async function POST(
         unidadeSigla: admin.unidadeSigla || 'PROAD',
         dadosAnteriores: {
           status: usuario.status,
+          nome: usuario.nome,
+          matricula: usuario.matricula,
+          cpf: usuario.cpf,
+          unidadeId: usuario.unidadeId,
           perfilSgc: usuario.perfilSgc,
           perfilManut: usuario.perfilManut,
           perfilPca: usuario.perfilPca,
@@ -118,20 +179,26 @@ export async function POST(
         },
         dadosNovos: {
           status: 'ATIVO',
+          nome: usuarioAprovado.nome,
+          matricula: usuarioAprovado.matricula,
+          cpf: usuarioAprovado.cpf,
+          unidadeId: usuarioAprovado.unidadeId,
           perfilSgc: usuarioAprovado.perfilSgc,
           perfilManut: usuarioAprovado.perfilManut,
           perfilPca: usuarioAprovado.perfilPca,
           perfilDiarias: usuarioAprovado.perfilDiarias,
         },
-        camposAlterados: ['status', 'perfilSgc', 'perfilManut', 'perfilPca', 'perfilDiarias'],
+        camposAlterados: ['status', 'nome', 'matricula', 'unidadeId', 'perfilSgc', 'perfilManut', 'perfilPca', 'perfilDiarias'],
         detalhes: {
           alvoId: id,
           alvoEmail: usuarioAprovado.email,
           alvoNome: usuarioAprovado.nome,
-          perfilSgc: usuarioAprovado.perfilSgc,
-          perfilManut: usuarioAprovado.perfilManut,
-          perfilPca: usuarioAprovado.perfilPca,
-          perfilDiarias: usuarioAprovado.perfilDiarias,
+          ajustesCadastraisFeitosPeloAdmin: {
+            nomeOriginal: usuario.nome,
+            nomeAtualizado: usuarioAprovado.nome,
+            matriculaOriginal: usuario.matricula,
+            matriculaAtualizada: usuarioAprovado.matricula,
+          },
         },
       },
     });
@@ -142,6 +209,7 @@ export async function POST(
       usuario: usuarioAprovado,
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Erro ao processar homologação.' }, { status: 500 });
+    console.error('Erro na homologação:', err);
+    return NextResponse.json({ error: err.message || 'Erro interno ao homologar usuário.' }, { status: 500 });
   }
 }

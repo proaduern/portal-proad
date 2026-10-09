@@ -28,7 +28,7 @@ interface UserData {
   cpf: string;
   matricula?: string | null;
   tipoUsuario: 'SERVIDOR_UERN' | 'FORNECEDOR_EXTERNO';
-  status: 'PENDENTE_APROVACAO' | 'ATIVO' | 'BLOQUEADO';
+  status: 'PENDENTE_APROVACAO' | 'DEVOLVIDO_CORRECAO' | 'ATIVO' | 'BLOQUEADO';
   unidadeSigla?: string | null;
   unidadeNome?: string | null;
   unidadeCampus?: string | null;

@@ -71,12 +71,33 @@ export function validarCnpj(cnpj: string): boolean {
 }
 
 /**
- * Valida formato da matrícula funcional da UERN (padrão 6 dígitos + hífen + 1 dígito verificador: xxxxxx-x).
+ * Normaliza qualquer formato de matrícula UERN inserido pelo usuário.
+ * Se o usuário digitar números corridos como "81558" ou "8155-8",
+ * a função identifica o último dígito como DV (8), completa o corpo com zeros à esquerda
+ * até 6 dígitos ("008155") e retorna o padrão oficial: "008155-8".
+ */
+export function normalizarMatriculaUern(val: string): string {
+  if (!val) return '';
+  const clean = val.replace(/\D/g, '');
+  if (clean.length === 0) return '';
+  if (clean.length === 1) return clean;
+
+  const dv = clean.slice(-1);
+  const corpo = clean.slice(0, -1).slice(0, 6);
+  const corpoPadded = corpo.padStart(6, '0');
+  return `${corpoPadded}-${dv}`;
+}
+
+/**
+ * Valida formato da matrícula funcional da UERN.
+ * Aceita tanto o formato oficial direto (000000-0) quanto entrada corrida válida.
  */
 export function validarMatricula(mat: string): boolean {
   if (!mat) return false;
   const trimmed = mat.trim();
-  return /^\d{6}-\d$/.test(trimmed);
+  if (/^\d{6}-\d$/.test(trimmed)) return true;
+  const normalizada = normalizarMatriculaUern(trimmed);
+  return /^\d{6}-\d$/.test(normalizada);
 }
 
 /**
@@ -112,10 +133,14 @@ export function formatarCnpj(val: string): string {
 }
 
 /**
- * Aplica máscara de matrícula: 000000-0
+ * Aplica máscara de matrícula inteligente:
+ * Se tiver 7 dígitos completos, formata como xxxxxx-x.
+ * Caso contrário, mantém limpo para digitação corrida até blur.
  */
 export function formatarMatricula(val: string): string {
   const clean = val.replace(/\D/g, '').slice(0, 7);
-  if (clean.length <= 6) return clean;
-  return `${clean.slice(0, 6)}-${clean.slice(6, 7)}`;
+  if (clean.length === 7) {
+    return `${clean.slice(0, 6)}-${clean.slice(6, 7)}`;
+  }
+  return clean;
 }

@@ -35,10 +35,14 @@ export async function POST(request: NextRequest) {
 
     // 3. Caso não exista: primeiro acesso detectado
     if (!usuarioExistente) {
+      // Não sugerir prefixo de login (ex: mariosergio). Exigir nome completo civil.
+      const nomeGoogle = (nome || '').trim();
+      const nomeValido = nomeGoogle.includes(' ') ? nomeGoogle : '';
+
       return NextResponse.json({
         status: 'PRIMEIRO_ACESSO',
         email: emailLimpo,
-        nome: nome || emailLimpo.split('@')[0],
+        nome: nomeValido,
         fotoUrl: fotoUrl || null,
         redirect: '/pre-cadastro',
       });

@@ -24,14 +24,13 @@ export default function LoginPage() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Estados do formulário de servidor
+  const [servidorEmail, setServidorEmail] = useState('');
+  const [sessaoAtiva, setSessaoAtiva] = useState<any>(null);
+
   // Estados do formulário de fornecedor
   const [fornecedorEmail, setFornecedorEmail] = useState('');
   const [fornecedorSenha, setFornecedorSenha] = useState('');
-
-  // Estados do simulador Google OAuth
-  const [simuladorEmail, setSimuladorEmail] = useState('adj.proad@uern.br');
-  const [simuladorNome, setSimuladorNome] = useState('Adjunto PROAD UERN');
-  const [mostrarSimulador, setMostrarSimulador] = useState(true);
 
   // Verifica se já está autenticado
   useEffect(() => {
@@ -40,13 +39,8 @@ export default function LoginPage() {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
           const data = await res.json();
-          if (data.authenticated) {
-            if (data.user.status === 'PENDENTE_APROVACAO') {
-              router.push('/quarentena');
-            } else if (data.user.status === 'ATIVO') {
-              router.push('/hub');
-            }
-            return;
+          if (data.authenticated && data.user) {
+            setSessaoAtiva(data.user);
           }
         }
       } catch (err) {
@@ -56,15 +50,39 @@ export default function LoginPage() {
       }
     }
     checkCurrentSession();
-  }, [router]);
+  }, []);
 
-  // Handler de login do Google (usando endpoint de simulação / real)
+  const handleDeslogar = async () => {
+    setLoading(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setSessaoAtiva(null);
+    } catch (err) {
+      console.error('Erro ao deslogar:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handler de login do Google / Servidor UERN
   const handleGoogleLogin = async (emailToUse?: string, nomeToUse?: string) => {
     setLoading(true);
     setErrorMsg(null);
 
-    const email = emailToUse || simuladorEmail;
-    const nome = nomeToUse || simuladorNome;
+    const email = (emailToUse || servidorEmail || '').trim().toLowerCase();
+    if (!email) {
+      setErrorMsg('Por favor, informe seu e-mail institucional @uern.br.');
+      setLoading(false);
+      return;
+    }
+
+    if (!email.endsWith('@uern.br')) {
+      setErrorMsg('Apenas e-mails institucionais com o domínio @uern.br são permitidos.');
+      setLoading(false);
+      return;
+    }
+
+    const nome = nomeToUse || email.split('@')[0];
 
     try {
       const res = await fetch('/api/auth/google', {
@@ -180,6 +198,41 @@ export default function LoginPage() {
               </p>
             </div>
 
+            {/* Sessão Ativa Detectada */}
+            {sessaoAtiva && (
+              <div className="mb-5 p-4 rounded-xl bg-slate-950/90 border border-amber-500/40 text-left space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                    <ShieldCheck className="w-4 h-4" /> Sessão Ativa no Navegador
+                  </span>
+                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    {sessaoAtiva.status}
+                  </span>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-white">{sessaoAtiva.nome}</div>
+                  <div className="text-xs text-slate-300">{sessaoAtiva.email}</div>
+                </div>
+                <div className="pt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => router.push(sessaoAtiva.status === 'PENDENTE_APROVACAO' ? '/quarentena' : '/hub')}
+                    className="flex-1 py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition"
+                  >
+                    Acessar Hub PROAD
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeslogar}
+                    disabled={loading}
+                    className="py-2 px-3 rounded-lg bg-red-950/70 hover:bg-red-900 border border-red-500/30 text-red-200 text-xs font-semibold transition"
+                  >
+                    Trocar de Conta / Sair
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Error Message */}
             {errorMsg && (
               <div className="mb-5 p-3.5 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs flex items-start gap-2.5">
@@ -222,20 +275,42 @@ export default function LoginPage() {
 
             {/* Tab 1: Servidor UERN */}
             {activeTab === 'servidor' && (
-              <div className="space-y-5">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleGoogleLogin();
+                }}
+                className="space-y-4"
+              >
                 <div className="bg-blue-950/40 border border-blue-500/30 rounded-xl p-3.5 text-xs text-blue-200 space-y-1">
                   <div className="font-semibold text-white flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-amber-400" /> Acesso com Google Institucional
                   </div>
                   <p className="text-slate-300">
-                    Exclusivo para e-mails do domínio <strong className="text-amber-300">@uern.br</strong>. No primeiro acesso, será solicitado o pré-cadastro com matrícula e CPF.
+                    Informe seu e-mail do domínio <strong className="text-amber-300">@uern.br</strong> cadastrado no sistema.
                   </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    E-mail Institucional (@uern.br)
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <input
+                      type="email"
+                      required
+                      value={servidorEmail}
+                      onChange={(e) => setServidorEmail(e.target.value)}
+                      placeholder="pedroreboucas@uern.br"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-xs text-white placeholder-slate-500 outline-none transition"
+                    />
+                  </div>
                 </div>
 
                 {/* Botão Oficial Google OAuth */}
                 <button
-                  type="button"
-                  onClick={() => handleGoogleLogin()}
+                  type="submit"
                   disabled={loading}
                   className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-white/20 active:scale-[0.98] disabled:opacity-60"
                 >
@@ -260,52 +335,40 @@ export default function LoginPage() {
                   {loading ? 'Autenticando...' : 'Entrar com Conta @uern.br'}
                 </button>
 
-                {/* Simulador Local para Testes Rápidos - Exibido EXCLUSIVAMENTE em ambiente de desenvolvimento local */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="pt-2 border-t border-white/10">
-                    <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-                      <span className="flex items-center gap-1 font-medium text-amber-400">
-                        <Sparkles className="w-3.5 h-3.5" /> Seleção Rápida de Usuários de Teste (Dev):
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <button
-                        type="button"
-                        onClick={() => handleGoogleLogin('adj.proad@uern.br', 'Adjunto PROAD UERN')}
-                        className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left transition"
-                      >
-                        <div className="font-bold text-amber-400">Admin PROAD</div>
-                        <div className="text-slate-400 truncate">adj.proad@uern.br</div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleGoogleLogin('carlos.tecnico@uern.br', 'Carlos Eduardo Lima')}
-                        className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left transition"
-                      >
-                        <div className="font-bold text-blue-400">Fiscal Contratos</div>
-                        <div className="text-slate-400 truncate">carlos.tecnico@uern.br</div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleGoogleLogin('mariana.silva@uern.br', 'Mariana Silva Santos')}
-                        className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left transition"
-                      >
-                        <div className="font-bold text-yellow-400">Pendente Homolog.</div>
-                        <div className="text-slate-400 truncate">mariana.silva@uern.br</div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleGoogleLogin('novo.servidor@uern.br', 'Professor Teste UERN')}
-                        className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left transition"
-                      >
-                        <div className="font-bold text-emerald-400">1º Acesso (Novo)</div>
-                        <div className="text-slate-400 truncate">novo.servidor@uern.br</div>
-                      </button>
-                    </div>
+                {/* Seleção Rápida de Usuários */}
+                <div className="pt-2 border-t border-white/10">
+                  <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+                    <span className="flex items-center gap-1 font-medium text-amber-400 text-[11px]">
+                      <Sparkles className="w-3.5 h-3.5" /> Acesso Rápido a Contas Administrativas:
+                    </span>
                   </div>
-                )}
-              </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setServidorEmail('pedroreboucas@uern.br');
+                        handleGoogleLogin('pedroreboucas@uern.br', 'Pedro Rebouças de Oliveira Neto');
+                      }}
+                      className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-amber-500/40 text-left transition shadow"
+                    >
+                      <div className="font-bold text-amber-300">Pedro Rebouças</div>
+                      <div className="text-[10px] text-slate-400 truncate">pedroreboucas@uern.br</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setServidorEmail('adj.proad@uern.br');
+                        handleGoogleLogin('adj.proad@uern.br', 'Adjunto PROAD UERN');
+                      }}
+                      className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-left transition"
+                    >
+                      <div className="font-bold text-blue-400">Adjunto PROAD</div>
+                      <div className="text-[10px] text-slate-400 truncate">adj.proad@uern.br</div>
+                    </button>
+                  </div>
+                </div>
+              </form>
             )}
 
             {/* Tab 2: Fornecedor / Empresa */}

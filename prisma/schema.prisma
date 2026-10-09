@@ -15,6 +15,7 @@ enum TipoUsuario {
 
 enum StatusUsuario {
   PENDENTE_APROVACAO
+  DEVOLVIDO_CORRECAO
   ATIVO
   BLOQUEADO
 }
@@ -74,6 +75,8 @@ model UsuarioCentral {
   aprovadoEm      DateTime?
   aprovadoPor     String?         // E-mail do Administrador que aprovou
   motivoBloqueio  String?
+  motivoDevolucao String?         // Mensagem do administrador orientando correção
+  dataDevolucao   DateTime?       // Data em que foi devolvido para ajuste
 
   logs            LogAuditoriaCentral[]
 

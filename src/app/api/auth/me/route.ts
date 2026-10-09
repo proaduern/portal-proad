@@ -47,6 +47,8 @@ export async function GET() {
         perfilPca: userDb.perfilPca,
         permissoesPca: userDb.permissoesPca,
         perfilDiarias: userDb.perfilDiarias,
+        motivoDevolucao: userDb.motivoDevolucao,
+        dataDevolucao: userDb.dataDevolucao,
         isAdminGeral: userDb.perfilSgc === 'ADMIN_PROAD' || userDb.perfilManut === 'ADMIN' || userDb.perfilPca === 'ADMIN',
       },
     });
