@@ -13,7 +13,6 @@ import {
   ExternalLink,
   CheckCircle2,
   ArrowRight,
-  Sparkles,
   HelpCircle,
 } from 'lucide-react';
 
@@ -334,40 +333,6 @@ export default function LoginPage() {
                   </svg>
                   {loading ? 'Autenticando...' : 'Entrar com Conta @uern.br'}
                 </button>
-
-                {/* Seleção Rápida de Usuários */}
-                <div className="pt-2 border-t border-white/10">
-                  <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-                    <span className="flex items-center gap-1 font-medium text-amber-400 text-[11px]">
-                      <Sparkles className="w-3.5 h-3.5" /> Acesso Rápido a Contas Administrativas:
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setServidorEmail('pedroreboucas@uern.br');
-                        handleGoogleLogin('pedroreboucas@uern.br', 'Pedro Rebouças de Oliveira Neto');
-                      }}
-                      className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-amber-500/40 text-left transition shadow"
-                    >
-                      <div className="font-bold text-amber-300">Pedro Rebouças</div>
-                      <div className="text-[10px] text-slate-400 truncate">pedroreboucas@uern.br</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setServidorEmail('adj.proad@uern.br');
-                        handleGoogleLogin('adj.proad@uern.br', 'Adjunto PROAD UERN');
-                      }}
-                      className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-left transition"
-                    >
-                      <div className="font-bold text-blue-400">Adjunto PROAD</div>
-                      <div className="text-[10px] text-slate-400 truncate">adj.proad@uern.br</div>
-                    </button>
-                  </div>
-                </div>
               </form>
             )}
 
