@@ -8,17 +8,11 @@ import {
   Wrench,
   ShoppingBag,
   Plane,
-  ShieldCheck,
-  User,
   LogOut,
-  ExternalLink,
   ChevronRight,
   Sparkles,
   Lock,
-  CheckCircle2,
-  AlertCircle,
   Settings,
-  HelpCircle,
 } from 'lucide-react';
 
 interface UserData {
@@ -46,12 +40,6 @@ export default function HubPage() {
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [launchingSystem, setLaunchingSystem] = useState<string | null>(null);
-  const [ssoModal, setSsoModal] = useState<{
-    open: boolean;
-    system: string;
-    token?: string;
-    targetUrl?: string;
-  } | null>(null);
 
   useEffect(() => {
     async function loadUser() {
@@ -104,19 +92,19 @@ export default function HubPage() {
 
       if (!res.ok) {
         alert(data.error || 'Erro ao gerar acesso SSO.');
+        setLaunchingSystem(null);
         return;
       }
 
-      // Exibe modal explicativo ou redireciona
-      setSsoModal({
-        open: true,
-        system: targetSystem,
-        token: data.token,
-        targetUrl: data.redirectUrl,
-      });
+      if (data.redirectUrl) {
+        // Redirecionamento direto ao subsistema (sem tela ou card intermediário)
+        window.location.href = data.redirectUrl;
+      } else {
+        alert('URL de redirecionamento não informada.');
+        setLaunchingSystem(null);
+      }
     } catch (err: any) {
       alert(err.message || 'Erro ao comunicar com o servidor.');
-    } finally {
       setLaunchingSystem(null);
     }
   };
@@ -413,57 +401,6 @@ export default function HubPage() {
         </div>
       </main>
 
-      {/* SSO Handover Modal */}
-      {ssoModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-white/15 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto mb-4">
-              <ShieldCheck className="w-7 h-7" />
-            </div>
-            <h3 className="text-lg font-bold text-white text-center">
-              Transição Segura SSO ({ssoModal.system})
-            </h3>
-            <p className="text-xs text-slate-300 text-center mt-2">
-              Seu token de autenticação de sessão única foi emitido com validade temporária de 2 minutos.
-            </p>
-
-            <div className="my-5 p-3 rounded-xl bg-slate-950/80 border border-white/10 text-xs space-y-2">
-              <div className="flex justify-between text-slate-400">
-                <span>Destino:</span>
-                <span className="text-amber-300 font-bold">{ssoModal.system}</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Identidade:</span>
-                <span className="text-white truncate max-w-[200px]">{user?.email}</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>URL de Destino:</span>
-                <span className="text-slate-300 truncate max-w-[200px]">{ssoModal.targetUrl}</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setSsoModal(null)}
-                className="flex-1 py-2 px-3 rounded-xl border border-white/10 hover:bg-white/5 text-xs text-slate-300 transition"
-              >
-                Fechar
-              </button>
-              <a
-                href={ssoModal.targetUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setSsoModal(null)}
-                className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow transition text-center"
-              >
-                <span>Abrir Sistema</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Footer */}
       <footer className="border-t border-white/10 bg-slate-950 px-6 py-4 text-center text-xs text-slate-400">
