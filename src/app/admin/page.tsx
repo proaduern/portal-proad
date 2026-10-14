@@ -28,6 +28,7 @@ import {
   Wrench,
   ShoppingBag,
   Plane,
+  Wind,
   History,
   LogOut,
 } from 'lucide-react';
@@ -79,6 +80,7 @@ interface Usuario {
   perfilPca?: string | null;
   permissoesPca?: any | null;
   perfilDiarias?: string | null;
+  perfilClimatizacao?: string | null;
   criadoEm: string;
   motivoBloqueio?: string | null;
   motivoDevolucao?: string | null;
@@ -125,6 +127,7 @@ export default function AdminPage() {
     podeVisualizarGeral: true,
   });
   const [homologarDiarias, setHomologarDiarias] = useState('');
+  const [homologarClimatizacao, setHomologarClimatizacao] = useState('');
   const [homologarUnidadeId, setHomologarUnidadeId] = useState('');
   const [homologarNome, setHomologarNome] = useState('');
   const [homologarCpf, setHomologarCpf] = useState('');
@@ -164,6 +167,7 @@ export default function AdminPage() {
     perfilManut: '',
     perfilPca: '',
     perfilDiarias: '',
+    perfilClimatizacao: '',
     status: 'ATIVO' as 'ATIVO' | 'BLOQUEADO' | 'PENDENTE_APROVACAO' | 'DEVOLVIDO_CORRECAO',
     motivoBloqueio: '',
   });
@@ -229,11 +233,13 @@ export default function AdminPage() {
       setHomologarManut(u.perfilManut || 'GESTOR_UNIDADE');
       setHomologarPca(u.perfilPca || 'UNIDADE');
       setHomologarDiarias(u.perfilDiarias || 'DEMANDANTE');
+      setHomologarClimatizacao(u.perfilClimatizacao || 'DEMANDANTE');
     } else {
       setHomologarSgc(u.perfilSgc || 'FORNECEDOR');
       setHomologarManut(u.perfilManut || 'EMPRESA');
       setHomologarPca('');
       setHomologarDiarias('');
+      setHomologarClimatizacao(u.perfilClimatizacao || 'EMPRESA');
     }
   };
 
@@ -268,6 +274,7 @@ export default function AdminPage() {
           payload.perfilPca = homologarPca || null;
           payload.permissoesPca = homologarPca ? homologarPcaPerms : null;
           payload.perfilDiarias = homologarDiarias || null;
+          payload.perfilClimatizacao = homologarClimatizacao || null;
         }
       }
 
@@ -729,6 +736,7 @@ export default function AdminPage() {
                     perfilManut: 'GESTOR_UNIDADE',
                     perfilPca: 'UNIDADE',
                     perfilDiarias: 'DEMANDANTE',
+                    perfilClimatizacao: 'DEMANDANTE',
                     status: 'ATIVO',
                     motivoBloqueio: '',
                   });
@@ -843,7 +851,12 @@ export default function AdminPage() {
                                 Diárias: {u.perfilDiarias}
                               </span>
                             )}
-                            {!u.perfilSgc && !u.perfilManut && !u.perfilPca && !u.perfilDiarias && (
+                            {u.perfilClimatizacao && (
+                              <span className="px-1.5 py-0.5 rounded bg-sky-900/60 text-sky-200 border border-sky-500/30 text-[10px]">
+                                Clima: {u.perfilClimatizacao}
+                              </span>
+                            )}
+                            {!u.perfilSgc && !u.perfilManut && !u.perfilPca && !u.perfilDiarias && !u.perfilClimatizacao && (
                               <span className="text-slate-500 text-[10px]">Nenhum perfil ativo</span>
                             )}
                           </div>
@@ -901,6 +914,7 @@ export default function AdminPage() {
                                     perfilManut: u.perfilManut || '',
                                     perfilPca: u.perfilPca || '',
                                     perfilDiarias: u.perfilDiarias || '',
+                                    perfilClimatizacao: u.perfilClimatizacao || '',
                                     status: u.status,
                                     motivoBloqueio: u.motivoBloqueio || '',
                                   });
@@ -1351,6 +1365,31 @@ export default function AdminPage() {
                   </select>
                 </div>
               )}
+
+              {/* 5. Climatização e Refrigeração */}
+              <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
+                    <Wind className="w-3.5 h-3.5" /> Climatização & Refrigeração
+                  </span>
+                </div>
+                <select
+                  value={homologarClimatizacao}
+                  onChange={(e) => setHomologarClimatizacao(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-sky-500"
+                >
+                  <option value="">Sem Acesso à Climatização</option>
+                  {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' ? (
+                    <>
+                      <option value="DEMANDANTE">Demandante (Abre e Acompanha Chamados)</option>
+                      <option value="FISCAL_TECNICO">Fiscal Técnico de Climatização</option>
+                      <option value="ADMIN">Administrador Geral de Climatização (PROAD)</option>
+                    </>
+                  ) : (
+                    <option value="EMPRESA">Empresa Contratada de Manutenção / Refrigeração</option>
+                  )}
+                </select>
+              </div>
             </div>
 
             {/* Caixa de Devolução (quando acionado pelo Admin) */}
@@ -1722,7 +1761,7 @@ export default function AdminPage() {
                 <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block">
                   Perfis de Acesso aos Sistemas
                 </span>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-[11px] text-slate-300 mb-1">Perfil SGC</label>
                     <select
@@ -1782,6 +1821,21 @@ export default function AdminPage() {
                       <option value="DEMANDANTE">DEMANDANTE</option>
                       <option value="FISCAL">FISCAL</option>
                       <option value="APROVADOR">APROVADOR</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-slate-300 mb-1">Perfil Climatização</label>
+                    <select
+                      value={usuarioForm.perfilClimatizacao}
+                      onChange={(e) => setUsuarioForm({ ...usuarioForm, perfilClimatizacao: e.target.value })}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white outline-none"
+                    >
+                      <option value="">Nenhum</option>
+                      <option value="ADMIN">ADMIN</option>
+                      <option value="DEMANDANTE">DEMANDANTE</option>
+                      <option value="FISCAL_TECNICO">FISCAL_TECNICO</option>
+                      <option value="EMPRESA">EMPRESA</option>
                     </select>
                   </div>
                 </div>

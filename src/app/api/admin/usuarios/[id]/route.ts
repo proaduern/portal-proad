@@ -81,6 +81,7 @@ export async function PUT(
       perfilPca,
       permissoesPca,
       perfilDiarias,
+      perfilClimatizacao,
       novaSenha,
     } = body;
 
@@ -125,6 +126,7 @@ export async function PUT(
     if (perfilPca !== undefined) dataToUpdate.perfilPca = perfilPca || null;
     if (permissoesPca !== undefined) dataToUpdate.permissoesPca = permissoesPca;
     if (perfilDiarias !== undefined) dataToUpdate.perfilDiarias = perfilDiarias || null;
+    if (perfilClimatizacao !== undefined) dataToUpdate.perfilClimatizacao = perfilClimatizacao || null;
 
     // Redefinição de senha se fornecida
     if (novaSenha && novaSenha.trim().length >= 6) {
@@ -157,6 +159,7 @@ export async function PUT(
           perfilManut: usuarioExistente.perfilManut,
           perfilPca: usuarioExistente.perfilPca,
           perfilDiarias: usuarioExistente.perfilDiarias,
+          perfilClimatizacao: (usuarioExistente as any).perfilClimatizacao,
           unidadeId: usuarioExistente.unidadeId,
         },
         dadosNovos: {
@@ -166,6 +169,7 @@ export async function PUT(
           perfilManut: usuarioAtualizado.perfilManut,
           perfilPca: usuarioAtualizado.perfilPca,
           perfilDiarias: usuarioAtualizado.perfilDiarias,
+          perfilClimatizacao: (usuarioAtualizado as any).perfilClimatizacao,
           unidadeId: usuarioAtualizado.unidadeId,
         },
         camposAlterados: Object.keys(dataToUpdate),

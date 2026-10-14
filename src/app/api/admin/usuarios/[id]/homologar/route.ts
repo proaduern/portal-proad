@@ -31,6 +31,7 @@ export async function POST(
       perfilPca,
       permissoesPca,
       perfilDiarias,
+      perfilClimatizacao,
     } = body;
 
     const usuario = await prisma.usuarioCentral.findUnique({
@@ -190,6 +191,7 @@ export async function POST(
       perfilPca: perfilPca || null,
       permissoesPca: permissoesPca || null,
       perfilDiarias: perfilDiarias || null,
+      perfilClimatizacao: perfilClimatizacao || null,
     };
 
     if (nome && nome.trim()) dataUpdate.nome = nome.trim();
@@ -229,6 +231,7 @@ export async function POST(
           perfilManut: usuario.perfilManut,
           perfilPca: usuario.perfilPca,
           perfilDiarias: usuario.perfilDiarias,
+          perfilClimatizacao: (usuario as any).perfilClimatizacao,
         },
         dadosNovos: {
           status: 'ATIVO',
@@ -240,8 +243,9 @@ export async function POST(
           perfilManut: usuarioAprovado.perfilManut,
           perfilPca: usuarioAprovado.perfilPca,
           perfilDiarias: usuarioAprovado.perfilDiarias,
+          perfilClimatizacao: (usuarioAprovado as any).perfilClimatizacao,
         },
-        camposAlterados: ['status', 'nome', 'matricula', 'unidadeId', 'perfilSgc', 'perfilManut', 'perfilPca', 'perfilDiarias'],
+        camposAlterados: ['status', 'nome', 'matricula', 'unidadeId', 'perfilSgc', 'perfilManut', 'perfilPca', 'perfilDiarias', 'perfilClimatizacao'],
         detalhes: {
           alvoId: id,
           alvoEmail: usuarioAprovado.email,
