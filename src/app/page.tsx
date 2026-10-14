@@ -301,7 +301,7 @@ export default function LoginPage() {
                       required
                       value={servidorEmail}
                       onChange={(e) => setServidorEmail(e.target.value)}
-                      placeholder="pedroreboucas@uern.br"
+                      placeholder="seu.nome@uern.br"
                       className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-xs text-white placeholder-slate-500 outline-none transition"
                     />
                   </div>
