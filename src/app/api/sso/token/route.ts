@@ -19,9 +19,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { targetSystem } = body as { targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' };
+    const { targetSystem } = body as { targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO' };
 
-    if (!targetSystem || !['SGC', 'MANUTENCAO', 'PCA', 'DIARIAS'].includes(targetSystem)) {
+    if (!targetSystem || !['SGC', 'MANUTENCAO', 'PCA', 'DIARIAS', 'CLIMATIZACAO'].includes(targetSystem)) {
       return NextResponse.json({ error: 'Sistema de destino inválido.' }, { status: 400 });
     }
 
@@ -51,6 +51,15 @@ export async function POST(request: NextRequest) {
     } else if (targetSystem === 'DIARIAS') {
       roleForSystem = userDb.perfilDiarias;
       systemBaseUrl = process.env.DIARIAS_URL || 'http://localhost:3004';
+    } else if (targetSystem === 'CLIMATIZACAO') {
+      roleForSystem =
+        (userDb as any).perfilClimatizacao ||
+        (userDb.perfilSgc === 'ADMIN_PROAD' || userDb.perfilManut === 'ADMIN'
+          ? 'ADMIN'
+          : userDb.tipoUsuario === 'FORNECEDOR_EXTERNO'
+          ? 'EMPRESA'
+          : 'DEMANDANTE');
+      systemBaseUrl = process.env.CLIMATIZACAO_URL || 'http://localhost:3005';
     }
 
     if (!roleForSystem) {
@@ -80,6 +89,7 @@ export async function POST(request: NextRequest) {
         perfilPca: userDb.perfilPca,
         permissoesPca: userDb.permissoesPca,
         perfilDiarias: userDb.perfilDiarias,
+        perfilClimatizacao: (userDb as any).perfilClimatizacao,
       },
       targetSystem
     );

@@ -68,6 +68,7 @@ model UsuarioCentral {
   perfilPca       String?         // ADMIN, UNIDADE
   permissoesPca   Json?           // Subpermissões finas de DFD ({ podeCriarDfd, podeEnviarDfd, etc })
   perfilDiarias   String?         // ADMIN, DEMANDANTE, FISCAL, APROVADOR
+  perfilClimatizacao String?      // ADMIN, DEMANDANTE, EMPRESA, FISCAL_TECNICO
 
   // Auditoria e Controle de Acesso
   criadoEm        DateTime        @default(now())

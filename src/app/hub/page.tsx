@@ -8,6 +8,7 @@ import {
   Wrench,
   ShoppingBag,
   Plane,
+  Snowflake,
   LogOut,
   ChevronRight,
   Sparkles,
@@ -32,6 +33,7 @@ interface UserData {
   perfilManut?: string | null;
   perfilPca?: string | null;
   perfilDiarias?: string | null;
+  perfilClimatizacao?: string | null;
   isAdminGeral: boolean;
 }
 
@@ -79,7 +81,7 @@ export default function HubPage() {
     }
   };
 
-  const handleLaunchSystem = async (targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS') => {
+  const handleLaunchSystem = async (targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO') => {
     setLaunchingSystem(targetSystem);
     try {
       const res = await fetch('/api/sso/token', {
@@ -209,7 +211,7 @@ export default function HubPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
               <span>Sistemas Disponíveis</span>
-              <span className="text-xs font-normal text-slate-500">(4 módulos integrados)</span>
+              <span className="text-xs font-normal text-slate-500">(5 módulos integrados)</span>
             </h3>
           </div>
 
@@ -395,6 +397,45 @@ export default function HubPage() {
                     <Lock className="w-3.5 h-3.5" /> Solicitar liberação
                   </span>
                 )}
+              </div>
+            </div>
+
+            {/* 5. Climatização e Refrigeração (SIG-CLIMA) */}
+            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-cyan-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+              <div>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                    <Snowflake className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold">
+                    Perfil: {user?.perfilClimatizacao || (user?.isAdminGeral ? 'ADMIN' : (user?.tipoUsuario === 'FORNECEDOR_EXTERNO' ? 'EMPRESA' : 'DEMANDANTE'))}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <h4 className="text-lg font-bold text-white group-hover:text-cyan-400 transition">
+                    Climatização e Refrigeração
+                  </h4>
+                  <span className="text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-md">
+                    SIG-CLIMA
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  Chamados e manutenção de condicionadores de ar, geladeiras, freezers e bebedouros de toda a UERN. Gestão de garantia de 90 dias, orçamentos vinculados ao SGC e ateste digital sem papel.
+                </p>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-slate-400">Porta 3005 • Prisma 5 / Next.js 14</span>
+                <button
+                  type="button"
+                  onClick={() => handleLaunchSystem('CLIMATIZACAO')}
+                  disabled={launchingSystem === 'CLIMATIZACAO'}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50"
+                >
+                  <span>{launchingSystem === 'CLIMATIZACAO' ? 'Iniciando...' : 'Entrar no SIG-CLIMA'}</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>

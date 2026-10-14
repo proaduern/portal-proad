@@ -29,6 +29,7 @@ export interface SessionPayload {
   perfilPca?: string | null;
   permissoesPca?: any | null;
   perfilDiarias?: string | null;
+  perfilClimatizacao?: string | null;
 }
 
 export async function hashPassword(pass: string): Promise<string> {
@@ -81,6 +82,7 @@ export async function verifyAdminSession(): Promise<SessionPayload | null> {
     session.perfilManut === 'ADMIN' ||
     session.perfilPca === 'ADMIN' ||
     session.perfilDiarias === 'ADMIN' ||
+    session.perfilClimatizacao === 'ADMIN' ||
     session.email === 'adj.proad@uern.br';
 
   if (!isAdmin) return null;
@@ -101,7 +103,7 @@ export async function clearSessionCookie(): Promise<void> {
  * Gera um token de Single Sign-On (SSO) com expiração curta (2 minutos)
  * para transição segura de clique do Launcher para os sistemas de destino.
  */
-export async function generateSsoToken(usuario: SessionPayload, targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS'): Promise<string> {
+export async function generateSsoToken(usuario: SessionPayload, targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO'): Promise<string> {
   return new SignJWT({
     userId: usuario.id,
     nome: usuario.nome,
@@ -118,7 +120,9 @@ export async function generateSsoToken(usuario: SessionPayload, targetSystem: 'S
         ? usuario.perfilManut
         : targetSystem === 'PCA'
         ? usuario.perfilPca
-        : usuario.perfilDiarias,
+        : targetSystem === 'DIARIAS'
+        ? usuario.perfilDiarias
+        : (usuario.perfilClimatizacao || (usuario.perfilSgc === 'ADMIN_PROAD' || usuario.perfilManut === 'ADMIN' ? 'ADMIN' : (usuario.tipoUsuario === 'FORNECEDOR_EXTERNO' ? 'EMPRESA' : 'DEMANDANTE'))),
     permissoesPca: targetSystem === 'PCA' ? usuario.permissoesPca : undefined,
   })
     .setProtectedHeader({ alg: 'HS256' })
