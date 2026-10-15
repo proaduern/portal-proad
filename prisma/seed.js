@@ -46,57 +46,72 @@ async function main() {
   // 2. Senha padrão criptografada
   const senhaPadrao = await bcrypt.hash('Uern@2026', 10);
 
-  // 3. Usuário Administrador Mestre da PROAD
-  console.log('Cadastrando Administrador Geral PROAD...');
-  const adminProad = await prisma.usuarioCentral.upsert({
-    where: { email: 'adj.proad@uern.br' },
-    update: {
-      status: 'ATIVO',
-      perfilSgc: 'ADMIN_PROAD',
-      perfilManut: 'ADMIN',
-      perfilPca: 'ADMIN',
-      perfilDiarias: 'ADMIN',
-      permissoesPca: {
-        podeCriarDfd: true,
-        podeEditarDfd: true,
-        podeEnviarDfd: true,
-        podeExcluirDfd: true,
-        podeSolicitarCatalogo: true,
-        podeSolicitarCotaGeral: true,
-        podeConfirmarEntrega: true,
-        podeGerenciarSetores: true,
-        podeEditarDadosUnidade: true,
-      },
-    },
-    create: {
-      tipoUsuario: 'SERVIDOR_UERN',
-      status: 'ATIVO',
-      nome: 'Administrador PROAD',
+  // 3. Usuários Administradores Mestres da PROAD
+  console.log('Cadastrando Administradores Gerais PROAD...');
+  const permissoesPcaMaster = {
+    podeCriarDfd: true,
+    podeEditarDfd: true,
+    podeEnviarDfd: true,
+    podeExcluirDfd: true,
+    podeSolicitarCatalogo: true,
+    podeSolicitarCotaGeral: true,
+    podeConfirmarEntrega: true,
+    podeGerenciarSetores: true,
+    podeEditarDadosUnidade: true,
+  };
+
+  const adminsMestres = [
+    {
       email: 'adj.proad@uern.br',
+      nome: 'Administrador Adjunto PROAD',
       cpf: '001.002.003-04',
       matricula: '000001-0',
       telefone: '(84) 3315-2100',
-      senhaHash: senhaPadrao,
-      unidadeId: unidadesCriadas['PROAD'].id,
-      perfilSgc: 'ADMIN_PROAD',
-      perfilManut: 'ADMIN',
-      perfilPca: 'ADMIN',
-      perfilDiarias: 'ADMIN',
-      permissoesPca: {
-        podeCriarDfd: true,
-        podeEditarDfd: true,
-        podeEnviarDfd: true,
-        podeExcluirDfd: true,
-        podeSolicitarCatalogo: true,
-        podeSolicitarCotaGeral: true,
-        podeConfirmarEntrega: true,
-        podeGerenciarSetores: true,
-        podeEditarDadosUnidade: true,
-      },
-      aprovadoEm: new Date(),
-      aprovadoPor: 'SISTEMA_ORIGEM',
     },
-  });
+    {
+      email: 'pedroreboucas@uern.br',
+      nome: 'Pedro Rebouças (Administrador Geral)',
+      cpf: '001.002.003-05',
+      matricula: '000002-0',
+      telefone: '(84) 99999-0001',
+    },
+  ];
+
+  for (const adm of adminsMestres) {
+    await prisma.usuarioCentral.upsert({
+      where: { email: adm.email },
+      update: {
+        status: 'ATIVO',
+        nome: adm.nome,
+        perfilSgc: 'ADMIN_PROAD',
+        perfilManut: 'ADMIN',
+        perfilPca: 'ADMIN',
+        perfilDiarias: 'ADMIN',
+        perfilClimatizacao: 'ADMIN',
+        permissoesPca: permissoesPcaMaster,
+        unidadeId: unidadesCriadas['PROAD'].id,
+      },
+      create: {
+        tipoUsuario: 'SERVIDOR_UERN',
+        status: 'ATIVO',
+        nome: adm.nome,
+        email: adm.email,
+        cpf: adm.cpf,
+        matricula: adm.matricula,
+        telefone: adm.telefone,
+        senhaHash: senhaPadrao,
+        unidadeId: unidadesCriadas['PROAD'].id,
+        perfilSgc: 'ADMIN_PROAD',
+        perfilManut: 'ADMIN',
+        perfilPca: 'ADMIN',
+        perfilDiarias: 'ADMIN',
+        perfilClimatizacao: 'ADMIN',
+        permissoesPca: permissoesPcaMaster,
+        aprovadoEm: new Date(),
+        aprovadoPor: 'SISTEMA_ORIGEM',
+      },
+    });
+  }
 
   // 4. Usuário Servidor Ativo com múltiplos perfis (Ex: Engenheiro Fiscal Técnico)
   console.log('Cadastrando Servidor Ativo de Demonstração (Fiscal Técnico)...');

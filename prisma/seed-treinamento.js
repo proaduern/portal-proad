@@ -1,15 +1,13 @@
 /**
- * Script de Seed do Portal Central para o Ambiente de Treinamento e Capacitação
- * Schema: portal_treinamento no Neon PostgreSQL
+ * Script de Verificação de Integridade das Unidades e Perfis no Portal Central
+ * Garante que as 22 unidades oficiais da UERN estejam cadastradas e nunca sejam deletadas.
  */
 
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
 
 const connectionUrl =
-  process.env.DATABASE_URL_TREINAMENTO ||
   process.env.DATABASE_URL ||
-  'postgresql://neondb_owner:npg_U3vzx7PrcCna@ep-still-butterfly-acl9x8uu-pooler.sa-east-1.aws.neon.tech/neondb?schema=portal_treinamento&sslmode=require&channel_binding=require&pgbouncer=true';
+  'postgresql://neondb_owner:npg_U3vzx7PrcCna@ep-still-butterfly-acl9x8uu-pooler.sa-east-1.aws.neon.tech/neondb?schema=portal&sslmode=require&channel_binding=require&pgbouncer=true';
 
 const prisma = new PrismaClient({
   datasources: {
@@ -17,193 +15,65 @@ const prisma = new PrismaClient({
   },
 });
 
+const UNIDADES_OFICIAIS = [
+  { codigo: '010', sigla: 'PROAD', nome: 'Pró-Reitoria de Administração', campus: 'Mossoró', email: 'proad@uern.br', predioNome: 'Edifício Reitoria' },
+  { codigo: '001', sigla: 'REITORIA', nome: 'Gabinete da Reitoria', campus: 'Mossoró', email: 'reitoria@uern.br', predioNome: 'Edifício Reitoria' },
+  { codigo: '011', sigla: 'PROEG', nome: 'Pró-Reitoria de Ensino de Graduação', campus: 'Mossoró', email: 'proeg@uern.br', predioNome: 'Edifício Reitoria' },
+  { codigo: '012', sigla: 'PROPEG', nome: 'Pró-Reitoria de Pesquisa e Pós-Graduação', campus: 'Mossoró', email: 'propeg@uern.br', predioNome: 'Edifício Reitoria' },
+  { codigo: '013', sigla: 'PROEX', nome: 'Pró-Reitoria de Extensão', campus: 'Mossoró', email: 'proex@uern.br', predioNome: 'Edifício Reitoria' },
+  { codigo: '014', sigla: 'PRAE', nome: 'Pró-Reitoria de Assuntos Estudantis', campus: 'Mossoró', email: 'prae@uern.br', predioNome: 'Centro de Convivência' },
+  { codigo: '015', sigla: 'PROPLAN', nome: 'Pró-Reitoria de Planejamento, Orçamento e Finanças', campus: 'Mossoró', email: 'proplan@uern.br', predioNome: 'Edifício Reitoria' },
+  { codigo: '020', sigla: 'DINF', nome: 'Diretoria de Informatização', campus: 'Mossoró', email: 'dinf@uern.br', predioNome: 'Prédio DINF / CPD' },
+  { codigo: '025', sigla: 'SOBE', nome: 'Setor de Obras e Manutenção Predial', campus: 'Mossoró', email: 'sobe@uern.br', predioNome: 'Almoxarifado Central' },
+  { codigo: '101', sigla: 'FAFIC', nome: 'Faculdade de Filosofia e Ciências Sociais', campus: 'Mossoró', email: 'fafic@uern.br', predioNome: 'Bloco FAFIC' },
+  { codigo: '102', sigla: 'FANAT', nome: 'Faculdade de Ciências Exatas e Naturais', campus: 'Mossoró', email: 'fanat@uern.br', predioNome: 'Bloco FANAT' },
+  { codigo: '103', sigla: 'FAE', nome: 'Faculdade de Educação', campus: 'Mossoró', email: 'fae@uern.br', predioNome: 'Bloco FAE' },
+  { codigo: '104', sigla: 'FACS', nome: 'Faculdade de Ciências da Saúde', campus: 'Mossoró', email: 'facs@uern.br', predioNome: 'Complexo FACS' },
+  { codigo: '105', sigla: 'FAD', nome: 'Faculdade de Direito', campus: 'Mossoró', email: 'fad@uern.br', predioNome: 'Bloco FAD' },
+  { codigo: '106', sigla: 'FASSO', nome: 'Faculdade de Serviço Social', campus: 'Mossoró', email: 'fasso@uern.br', predioNome: 'Bloco FASSO' },
+  { codigo: '107', sigla: 'FAEN', nome: 'Faculdade de Enfermagem', campus: 'Mossoró', email: 'faen@uern.br', predioNome: 'Bloco FAEN' },
+  { codigo: '108', sigla: 'FE', nome: 'Faculdade de Educação Física', campus: 'Mossoró', email: 'fe@uern.br', predioNome: 'Ginásio e Complexo Esportivo' },
+  { codigo: '201', sigla: 'CAMPUS-ASSU', nome: 'Campus Avançado Prefeito Walter de Sá Leitão', campus: 'Assú', email: 'campus.assu@uern.br', predioNome: 'Campus Assú' },
+  { codigo: '202', sigla: 'CAMPUS-CAICO', nome: 'Campus de Caicó', campus: 'Caicó', email: 'campus.caico@uern.br', predioNome: 'Campus Caicó' },
+  { codigo: '203', sigla: 'CAMPUS-PATU', nome: 'Campus Avançado de Patu', campus: 'Patu', email: 'campus.patu@uern.br', predioNome: 'Campus Patu' },
+  { codigo: '204', sigla: 'CAMPUS-PAU-FERROS', nome: 'Campus Avançado de Pau dos Ferros', campus: 'Pau dos Ferros', email: 'campus.pauferros@uern.br', predioNome: 'Campus Pau dos Ferros' },
+  { codigo: '205', sigla: 'CAMPUS-NATAL', nome: 'Complexo Cultural / Campus de Natal', campus: 'Natal', email: 'campus.natal@uern.br', predioNome: 'Campus Natal - Zona Norte' },
+];
+
 async function runSeedPortalTreinamento() {
-  console.log('--- INICIANDO SEED DO PORTAL DE TREINAMENTO (PROAD UERN) ---');
+  console.log('--- VERIFICAÇÃO E INTEGRIDADE DO PORTAL CENTRAL PROAD UERN ---');
 
-  // 1. Limpeza segura de dados de treinamento anteriores
-  try {
-    console.log('Limpando usuários anteriores de treinamento...');
-    await prisma.usuarioCentral.deleteMany({});
-    await prisma.unidadeCentral.deleteMany({});
-    console.log('Limpeza do portal concluída.');
-  } catch (err) {
-    console.log('Aviso ao limpar tabelas do portal:', err.message);
-  }
-
-  // 2. Unidades Oficiais da UERN
-  console.log('Cadastrando unidades simuladas...');
-  const unidades = [
-    { codigo: '010', sigla: 'PROAD', nome: 'Pró-Reitoria de Administração (Treinamento)', campus: 'Mossoró', email: 'proad@uern.br', predioNome: 'Edifício Reitoria' },
-    { codigo: '025', sigla: 'SOBE', nome: 'Setor de Obras e Manutenção Predial (Treinamento)', campus: 'Mossoró', email: 'sobe@uern.br', predioNome: 'Almoxarifado Central' },
-    { codigo: '020', sigla: 'DINF', nome: 'Diretoria de Informatização (Treinamento)', campus: 'Mossoró', email: 'dinf@uern.br', predioNome: 'Prédio DINF / CPD' },
-    { codigo: '101', sigla: 'FAFIC', nome: 'Faculdade de Filosofia e Ciências Sociais (Treinamento)', campus: 'Mossoró', email: 'fafic@uern.br', predioNome: 'Bloco FAFIC' },
-    { codigo: '201', sigla: 'CAMPUS-ASSU', nome: 'Campus Avançado de Assú (Treinamento)', campus: 'Assú', email: 'campus.assu@uern.br', predioNome: 'Campus Assú' },
-    { codigo: '204', sigla: 'CAMPUS-PAU-FERROS', nome: 'Campus de Pau dos Ferros (Treinamento)', campus: 'Pau dos Ferros', email: 'campus.pauferros@uern.br', predioNome: 'Campus Pau dos Ferros' },
-  ];
-
-  const unidadesCriadas = {};
-  for (const u of unidades) {
-    unidadesCriadas[u.sigla] = await prisma.unidadeCentral.upsert({
+  // NUNCA deletar tabelas centrais! Apenas garantir as 22 unidades oficiais.
+  for (const u of UNIDADES_OFICIAIS) {
+    await prisma.unidadeCentral.upsert({
       where: { sigla: u.sigla },
-      update: u,
-      create: u,
+      update: {
+        codigo: u.codigo,
+        nome: u.nome,
+        campus: u.campus,
+        email: u.email,
+        predioNome: u.predioNome,
+        ativo: true,
+      },
+      create: {
+        codigo: u.codigo,
+        sigla: u.sigla,
+        nome: u.nome,
+        campus: u.campus,
+        email: u.email,
+        predioNome: u.predioNome,
+        ativo: true,
+      },
     });
   }
 
-  // Senha padrão didática
-  const senhaPadrao = await bcrypt.hash('Treino@2026', 10);
-
-  // 3. Perfis Didáticos Transversais (Mesmos usados no SIG-CLIMA, SGC, PCA, etc.)
-  console.log('Cadastrando perfis didáticos integrados para as turmas...');
-
-  // 3.1 Aluno Demandante
-  await prisma.usuarioCentral.upsert({
-    where: { email: 'aluno.demandante@uern.br' },
-    update: {},
-    create: {
-      tipoUsuario: 'SERVIDOR_UERN',
-      status: 'ATIVO',
-      nome: 'Aluno Demandante (Profª Fátima Souza)',
-      email: 'aluno.demandante@uern.br',
-      cpf: '000.111.222-33',
-      matricula: 'TR-1001-0',
-      telefone: '(84) 98888-0001',
-      senhaHash: senhaPadrao,
-      unidadeId: unidadesCriadas['FAFIC'].id,
-      perfilSgc: 'DEMANDANTE',
-      perfilManut: 'DEMANDANTE',
-      perfilPca: 'UNIDADE',
-      permissoesPca: { podeCriarDfd: true, podeEditarDfd: true, podeEnviarDfd: true },
-      perfilDiarias: 'DEMANDANTE',
-      perfilClimatizacao: 'DEMANDANTE',
-      aprovadoEm: new Date(),
-      aprovadoPor: 'INSTRUTOR_PROAD',
-    },
-  });
-
-  // 3.2 Aluno Fiscal Técnico
-  await prisma.usuarioCentral.upsert({
-    where: { email: 'aluno.fiscal.tec@uern.br' },
-    update: {},
-    create: {
-      tipoUsuario: 'SERVIDOR_UERN',
-      status: 'ATIVO',
-      nome: 'Aluno Fiscal Técnico (Eng. Carlos Eduardo)',
-      email: 'aluno.fiscal.tec@uern.br',
-      cpf: '000.222.333-44',
-      matricula: 'TR-2002-0',
-      telefone: '(84) 98888-0002',
-      senhaHash: senhaPadrao,
-      unidadeId: unidadesCriadas['SOBE'].id,
-      perfilSgc: 'FISCAL_TECNICO',
-      perfilManut: 'FISCAL_TECNICO',
-      perfilPca: 'UNIDADE',
-      permissoesPca: { podeCriarDfd: true },
-      perfilDiarias: 'DEMANDANTE',
-      perfilClimatizacao: 'FISCAL_TECNICO',
-      aprovadoEm: new Date(),
-      aprovadoPor: 'INSTRUTOR_PROAD',
-    },
-  });
-
-  // 3.3 Aluno Fiscal Administrativo / Gestor
-  await prisma.usuarioCentral.upsert({
-    where: { email: 'aluno.fiscal.adm@uern.br' },
-    update: {},
-    create: {
-      tipoUsuario: 'SERVIDOR_UERN',
-      status: 'ATIVO',
-      nome: 'Aluno Fiscal Administrativo (Dra. Renata Medeiros)',
-      email: 'aluno.fiscal.adm@uern.br',
-      cpf: '000.333.444-55',
-      matricula: 'TR-3003-0',
-      telefone: '(84) 98888-0003',
-      senhaHash: senhaPadrao,
-      unidadeId: unidadesCriadas['PROAD'].id,
-      perfilSgc: 'FISCAL_ADM',
-      perfilManut: 'FISCAL_ADM',
-      perfilPca: 'ADMIN',
-      permissoesPca: { podeCriarDfd: true, podeEditarDfd: true, podeEnviarDfd: true },
-      perfilDiarias: 'APROVADOR',
-      perfilClimatizacao: 'FISCAL_ADM',
-      aprovadoEm: new Date(),
-      aprovadoPor: 'INSTRUTOR_PROAD',
-    },
-  });
-
-  // 3.4 Aluno Empresa Contratada
-  await prisma.usuarioCentral.upsert({
-    where: { email: 'aluno.empresa@prestadora.com' },
-    update: {},
-    create: {
-      tipoUsuario: 'FORNECEDOR_EXTERNO',
-      status: 'ATIVO',
-      nome: 'Roberto Silva (Preposto ECOCLIMA)',
-      email: 'aluno.empresa@prestadora.com',
-      cpf: '000.444.555-66',
-      cnpjEmpresa: '99.999.999/0001-99',
-      razaoSocial: 'ECOCLIMA SERVIÇOS TÉCNICOS LTDA (TREINAMENTO)',
-      nomeFantasia: 'ECOCLIMA TREINAMENTO',
-      cargoPreposto: 'Preposto / Engenheiro Responsável',
-      telefone: '(84) 98888-0004',
-      senhaHash: senhaPadrao,
-      perfilSgc: 'FORNECEDOR',
-      perfilManut: 'EMPRESA',
-      perfilClimatizacao: 'EMPRESA',
-      aprovadoEm: new Date(),
-      aprovadoPor: 'INSTRUTOR_PROAD',
-    },
-  });
-
-  // 3.5 Instrutor / Administrador Geral
-  await prisma.usuarioCentral.upsert({
-    where: { email: 'aluno.admin@uern.br' },
-    update: {},
-    create: {
-      tipoUsuario: 'SERVIDOR_UERN',
-      status: 'ATIVO',
-      nome: 'Instrutor PROAD (Administrador Geral)',
-      email: 'aluno.admin@uern.br',
-      cpf: '000.555.666-77',
-      matricula: 'ADM-5005-0',
-      telefone: '(84) 3315-2100',
-      senhaHash: senhaPadrao,
-      unidadeId: unidadesCriadas['PROAD'].id,
-      perfilSgc: 'ADMIN_PROAD',
-      perfilManut: 'ADMIN',
-      perfilPca: 'ADMIN',
-      perfilDiarias: 'ADMIN',
-      perfilClimatizacao: 'ADMIN',
-      permissoesPca: {
-        podeCriarDfd: true,
-        podeEditarDfd: true,
-        podeEnviarDfd: true,
-        podeExcluirDfd: true,
-        podeSolicitarCatalogo: true,
-        podeSolicitarCotaGeral: true,
-        podeConfirmarEntrega: true,
-        podeGerenciarSetores: true,
-        podeEditarDadosUnidade: true,
-      },
-      aprovadoEm: new Date(),
-      aprovadoPor: 'SISTEMA_ORIGEM',
-    },
-  });
-
-  console.log('--- SEED DO PORTAL DE TREINAMENTO CONCLUÍDO COM SUCESSO! ---');
-  console.log('Perfis didáticos prontos para login único e salto SSO.');
-}
-
-if (require.main === module) {
-  runSeedPortalTreinamento()
-    .then(async () => {
-      await prisma.$disconnect();
-    })
-    .catch(async (e) => {
-      console.error('Erro ao executar seed do portal de treinamento:', e);
-      await prisma.$disconnect();
-      process.exit(1);
-    });
+  console.log('Catálogo de 22 unidades oficiais verificado com sucesso.');
 }
 
 module.exports = { runSeedPortalTreinamento };
+
+if (require.main === module) {
+  runSeedPortalTreinamento()
+    .catch(console.error)
+    .finally(() => prisma.$disconnect());
+}
