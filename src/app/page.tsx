@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Building2,
   Lock,
@@ -411,6 +412,17 @@ export default function LoginPage() {
                 </div>
               </form>
             )}
+          </div>
+
+          {/* Botão de Acesso ao Ambiente de Treinamento */}
+          <div className="mt-4 text-center">
+            <Link
+              href="/treinamento"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all shadow-md shadow-amber-500/10 hover:shadow-amber-500/20"
+            >
+              <span>🎓 Acessar Ambiente de Treinamento (Sandbox PROAD)</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
           {/* Footer note */}
