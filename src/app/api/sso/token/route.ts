@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { targetSystem } = body as { targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO' };
+    const { targetSystem, isTreinamento } = body as {
+      targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO';
+      isTreinamento?: boolean;
+    };
 
     if (!targetSystem || !['SGC', 'MANUTENCAO', 'PCA', 'DIARIAS', 'CLIMATIZACAO'].includes(targetSystem)) {
       return NextResponse.json({ error: 'Sistema de destino inválido.' }, { status: 400 });
@@ -56,15 +59,15 @@ export async function POST(request: NextRequest) {
         (userDb as any).perfilClimatizacao ||
         (userDb.perfilSgc === 'ADMIN_PROAD' || userDb.perfilManut === 'ADMIN'
           ? 'ADMIN'
-          : userDb.tipoUsuario === 'FORNECEDOR_EXTERNO'
-          ? 'EMPRESA'
-          : 'DEMANDANTE');
+          : null);
       systemBaseUrl = process.env.CLIMATIZACAO_URL || 'http://localhost:3005';
     }
 
     if (!roleForSystem) {
       return NextResponse.json(
-        { error: `Você não possui perfil de acesso autorizado para o sistema ${targetSystem}. Solicite autorização à PROAD.` },
+        {
+          error: `Você não possui perfil de acesso autorizado para o sistema ${targetSystem}. Solicite autorização à PROAD para poder acessar ou treinar neste subsistema.`,
+        },
         { status: 403 }
       );
     }
@@ -94,7 +97,9 @@ export async function POST(request: NextRequest) {
       targetSystem
     );
 
-    const redirectUrl = `${systemBaseUrl}/api/auth/sso-callback?token=${encodeURIComponent(ssoToken)}`;
+    const redirectUrl = isTreinamento
+      ? `${systemBaseUrl}/api/auth/sso-callback?token=${encodeURIComponent(ssoToken)}&treinamento=1`
+      : `${systemBaseUrl}/api/auth/sso-callback?token=${encodeURIComponent(ssoToken)}`;
 
     return NextResponse.json({
       success: true,
@@ -102,6 +107,7 @@ export async function POST(request: NextRequest) {
       role: roleForSystem,
       token: ssoToken,
       redirectUrl,
+      isTreinamento: Boolean(isTreinamento),
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Erro ao gerar token SSO.' }, { status: 500 });

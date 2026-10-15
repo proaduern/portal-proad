@@ -1,146 +1,124 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   GraduationCap,
-  ShieldAlert,
+  ShieldCheck,
   ArrowRight,
   RefreshCw,
   Building2,
   Users,
   CheckCircle2,
   ExternalLink,
-  ShieldCheck,
   Wrench,
-  ThermometerSnowflake,
+  Snowflake,
   FileText,
   Plane,
+  ShoppingBag,
+  Lock,
+  AlertTriangle,
+  Sparkles,
+  ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
 
-interface PerfilTreino {
-  titulo: string;
+interface UserData {
+  id: string;
   nome: string;
   email: string;
-  icone: string;
-  papel: string;
-  badge: string;
-  corBadge: string;
-  descricao: string;
-  sistemas: string[];
+  cpf: string;
+  matricula?: string | null;
+  tipoUsuario: 'SERVIDOR_UERN' | 'FORNECEDOR_EXTERNO';
+  status: 'PENDENTE_APROVACAO' | 'DEVOLVIDO_CORRECAO' | 'ATIVO' | 'BLOQUEADO';
+  unidadeSigla?: string | null;
+  unidadeNome?: string | null;
+  unidadeCampus?: string | null;
+  cnpjEmpresa?: string | null;
+  razaoSocial?: string | null;
+  perfilSgc?: string | null;
+  perfilManut?: string | null;
+  perfilPca?: string | null;
+  perfilDiarias?: string | null;
+  perfilClimatizacao?: string | null;
+  isAdminGeral: boolean;
 }
 
 export default function TreinamentoPage() {
   const router = useRouter();
-  const [loadingEmail, setLoadingEmail] = useState<string | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [launchingSystem, setLaunchingSystem] = useState<string | null>(null);
   const [resetando, setResetando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
-  const perfis: PerfilTreino[] = [
-    {
-      titulo: 'Administrador Geral / Instrutor',
-      nome: 'Instrutor PROAD',
-      email: 'aluno.admin@uern.br',
-      icone: '🏛️',
-      papel: 'ADMIN_PROAD',
-      badge: 'Acesso Máximo Total',
-      corBadge: 'bg-purple-100 text-purple-800 border-purple-200',
-      descricao: 'Acesso amplo e irrestrito a todos os 6 subsistemas: homologação, auditoria, parametrização, contratos e reset da turma.',
-      sistemas: ['Portal Central', 'SGC', 'SIG-CLIMA', 'Manutenção Predial', 'PCA', 'Diárias'],
-    },
-    {
-      titulo: 'Fiscal Administrativo / Gestor',
-      nome: 'Dra. Renata Medeiros',
-      email: 'aluno.fiscal.adm@uern.br',
-      icone: '📋',
-      papel: 'FISCAL_ADM',
-      badge: 'Gestão Orçamentária',
-      corBadge: 'bg-blue-100 text-blue-800 border-blue-200',
-      descricao: 'Abertura de OS prévia estimativa, acompanhamento de limites e saldos contratuais, atestes de medições e aprovação de orçamentos.',
-      sistemas: ['SGC', 'SIG-CLIMA', 'Manutenção Predial', 'PCA'],
-    },
-    {
-      titulo: 'Fiscal Técnico',
-      nome: 'Eng. Carlos Eduardo',
-      email: 'aluno.fiscal.tec@uern.br',
-      icone: '🔍',
-      papel: 'FISCAL_TECNICO',
-      badge: 'Vistoria e Pareceres',
-      corBadge: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-      descricao: 'Avaliação técnica de orçamentos, vistorias in loco de equipamentos, validação de peças e emissão de atestes parciais.',
-      sistemas: ['SGC', 'SIG-CLIMA', 'Manutenção Predial'],
-    },
-    {
-      titulo: 'Demandante da Unidade',
-      nome: 'Profª Fátima Souza',
-      email: 'aluno.demandante@uern.br',
-      icone: '🎓',
-      papel: 'DEMANDANTE',
-      badge: 'Unidade Requisitante',
-      corBadge: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      descricao: 'Praticar o fluxo da ponta: abertura de chamados de refrigeração/obras, cadastro de ambientes/máquinas e o novo ateste tácito de 5 dias.',
-      sistemas: ['Portal Central', 'SIG-CLIMA', 'Manutenção Predial', 'Diárias', 'PCA (DFD)'],
-    },
-    {
-      titulo: 'Empresa Prestadora / Contratada',
-      nome: 'Roberto Silva (Preposto ECOCLIMA)',
-      email: 'aluno.empresa@prestadora.com',
-      icone: '🛠️',
-      papel: 'EMPRESA',
-      badge: 'Contratada Terceirizada',
-      corBadge: 'bg-amber-100 text-amber-800 border-amber-200',
-      descricao: 'Visão externa do prestador: recebimento de chamados, elaboração de orçamentos com tabela de peças, laudos de condenação e conclusão de serviços.',
-      sistemas: ['SIG-CLIMA', 'Manutenção Predial', 'SGC'],
-    },
-    {
-      titulo: 'Pedro Rebouças (Admin PROAD)',
-      nome: 'Pedro Rebouças de Oliveira Neto',
-      email: 'pedroreboucas@uern.br',
-      icone: '⭐',
-      papel: 'ADMIN_PROAD',
-      badge: 'Gestor Titular PROAD',
-      corBadge: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      descricao: 'Acesso mestre direto com suas credenciais oficiais institucionalizadas em todos os módulos.',
-      sistemas: ['Todos os 6 Subsistemas'],
-    },
-  ];
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) {
+          router.push('/');
+          return;
+        }
+        const data = await res.json();
+        if (!data.authenticated) {
+          router.push('/');
+          return;
+        }
 
-  const handleEntrarComo = async (perfil: PerfilTreino) => {
-    setLoadingEmail(perfil.email);
-    setMensagem(null);
+        if (data.user.status === 'PENDENTE_APROVACAO') {
+          router.push('/quarentena');
+          return;
+        }
+
+        setUser(data.user);
+      } catch (err) {
+        console.error(err);
+        router.push('/');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadUser();
+  }, [router]);
+
+  const handleLaunchSystemTreino = async (
+    targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO'
+  ) => {
+    setLaunchingSystem(targetSystem);
     setErro(null);
-
     try {
-      const res = await fetch('/api/treinamento/simular-login', {
+      const res = await fetch('/api/sso/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: perfil.email }),
+        body: JSON.stringify({ targetSystem, isTreinamento: true }),
       });
 
       const data = await res.json();
+
       if (!res.ok) {
-        throw new Error(data.error || 'Erro ao simular login de treinamento.');
+        setErro(data.error || 'Erro ao gerar acesso ao treinamento.');
+        setLaunchingSystem(null);
+        return;
       }
 
-      // Ativa flag no localStorage para manter a tarja amarela de treinamento ativa em todos os subsistemas
-      localStorage.setItem('uern_modo_treinamento', 'true');
-
-      setMensagem(`Autenticado com sucesso como ${perfil.nome}! Redirecionando para o Hub...`);
-      setTimeout(() => {
-        router.push(data.redirect || '/hub');
-      }, 700);
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        setErro('URL de redirecionamento não informada.');
+        setLaunchingSystem(null);
+      }
     } catch (err: any) {
-      setErro(err.message || 'Erro ao conectar ao perfil de treinamento.');
-      setLoadingEmail(null);
+      setErro(err.message || 'Erro ao comunicar com o servidor.');
+      setLaunchingSystem(null);
     }
   };
 
-  const handleResetarBase = async () => {
+  const handleResetarTurma = async () => {
     if (
       !confirm(
-        'ATENÇÃO INSTRUTOR PROAD:\n\nDeseja realmente RESETAR todos os dados didáticos do ambiente de treinamento?\n\nTodas as solicitações simuladas, orçamentos e chamados da turma atual serão apagados e a base voltará ao estado inicial com os usuários e contratos didáticos padrões. A produção oficial NÃO será afetada.'
+        'Atenção Administrador / Instrutor PROAD:\n\nDeseja restaurar as bases didáticas de treinamento para o estado limpo?\nTodos os chamados e dados gerados durante as simulações recentes serão reinicializados.'
       )
     ) {
       return;
@@ -149,245 +127,423 @@ export default function TreinamentoPage() {
     setResetando(true);
     setMensagem(null);
     setErro(null);
-
     try {
-      const res = await fetch('/api/treinamento/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
+      const res = await fetch('/api/treinamento/reset', { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Falha ao resetar banco de treinamento.');
+      if (res.ok) {
+        setMensagem(data.mensagem || 'Bases didáticas restauradas com sucesso!');
+        setTimeout(() => setMensagem(null), 5000);
+      } else {
+        setErro(data.error || 'Erro ao resetar base de treinamento.');
       }
-
-      setMensagem('Base de dados de treinamento resetada e semeada com sucesso! Pronta para a turma.');
     } catch (err: any) {
-      setErro(err.message || 'Erro ao resetar ambiente.');
+      setErro(err.message || 'Falha ao conectar com o serviço de reset.');
     } finally {
       setResetando(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans">
-      {/* Tarja Amarela Oficial de Treinamento */}
-      <div className="bg-amber-400 text-slate-950 px-4 py-2.5 font-bold text-xs uppercase tracking-wider flex items-center justify-between border-b border-amber-500 shadow-md">
-        <div className="flex items-center gap-2 max-w-4xl mx-auto w-full">
-          <ShieldAlert className="w-5 h-5 text-slate-950 flex-shrink-0 animate-pulse" />
-          <span>
-            AMBIENTE DE TREINAMENTO & CAPACITAÇÃO PROAD • SANDBOX DIDÁTICO ISOLADO (DADOS SEM VALIDADE JURÍDICA)
-          </span>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-slate-300">Carregando permissões do Ambiente de Treinamento...</p>
         </div>
       </div>
+    );
+  }
 
-      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+  // Permissões ativas por sistema
+  const hasAccessSgc = Boolean(user?.perfilSgc || user?.isAdminGeral);
+  const hasAccessPca = Boolean(user?.perfilPca || user?.isAdminGeral);
+  const hasAccessManut = Boolean(user?.perfilManut || user?.isAdminGeral);
+  const hasAccessDiarias = Boolean(user?.perfilDiarias || user?.isAdminGeral);
+  const hasAccessClima = Boolean(user?.perfilClimatizacao || user?.isAdminGeral);
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
+      {/* Header */}
+      <header className="border-b border-white/10 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">
+            <Link
+              href="/hub"
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition"
+              title="Voltar ao Painel Geral"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center font-bold text-slate-950 shadow-md">
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-white flex items-center gap-2">
-                Hub de Treinamento PROAD • UERN
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-400">UERN • PROAD</span>
+                <span className="text-[10px] bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/20 font-bold">
+                  Sandbox Didático
+                </span>
+              </div>
+              <h1 className="text-sm font-bold text-white tracking-tight">
+                Ambiente de Treinamento & Capacitação
               </h1>
-              <p className="text-xs text-slate-400">Simulador de papéis e capacitação de servidores</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleResetarBase}
-              disabled={resetando}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 transition-all cursor-pointer disabled:opacity-50"
-              title="Apagar dados criados pelos alunos e restaurar estado zero"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${resetando ? 'animate-spin' : ''}`} />
-              <span>{resetando ? 'Resetando...' : 'Resetar Dados da Turma'}</span>
-            </button>
             <Link
-              href="/"
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
+              href="/hub"
+              className="px-3.5 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 text-xs font-semibold transition"
             >
-              Ir para Login Oficial
+              Ir para Produção Oficial
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8 space-y-6">
-        {/* Banner Explicativo */}
-        <div className="bg-gradient-to-r from-amber-500/10 via-slate-800/60 to-blue-500/10 border border-amber-500/30 p-6 rounded-2xl space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Banco de Dados Isolado no Neon • Zero Risco para a Produção
+      {/* Main Container */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
+        {/* Banner Institucional do Treinamento */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-950 via-yellow-950 to-slate-900 border border-amber-500/40 p-6 sm:p-8 mb-8 shadow-2xl">
+          <div className="max-w-3xl relative z-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-yellow-300 border border-amber-400/30 text-xs font-extrabold mb-3">
+              <Sparkles className="w-3.5 h-3.5" /> Capacitação Contínua UERN
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Treine com seus Acessos Reais, sem Risco à Produção
+            </h2>
+            <p className="text-xs sm:text-sm text-amber-200/90 mt-2 leading-relaxed">
+              Bem-vindo ao Ambiente de Treinamento da PROAD. Neste espaço, você pode exercitar fluxos completos,
+              abrir chamados, emitir pareceres e atestar serviços sobre dados temporários didáticos.
+            </p>
+
+            <div className="mt-4 p-3.5 rounded-xl bg-slate-950/70 border border-amber-500/30 flex items-start gap-3">
+              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="text-xs text-slate-300 leading-relaxed">
+                <strong className="text-white">Governança Integrada:</strong> O acesso ao treinamento reflete
+                estritamente a homologação efetuada pelo Administrador da PROAD no mundo real.
+                Você só pode treinar nos subsistemas e com os perfis atribuídos à sua conta institucional.
+              </div>
+            </div>
           </div>
-          <h2 className="text-xl font-bold text-white">
-            Como acessar o ambiente de treinamento como Administrador?
-          </h2>
-          <p className="text-sm text-slate-300 leading-relaxed max-w-3xl">
-            Basta clicar em qualquer um dos cartões abaixo para entrar instantaneamente no sistema com o papel
-            correspondente. Ao escolher o perfil de <strong>Administrador Geral</strong>, você terá visão e controle
-            pleno sobre todos os módulos do Portal, SGC, SIG-CLIMA, Manutenção Predial, PCA e Diárias.
-          </p>
+          <div className="absolute right-0 bottom-0 translate-x-12 translate-y-12 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         </div>
 
+        {/* Feedback Messages */}
         {mensagem && (
-          <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-sm flex items-center gap-3 animate-in fade-in">
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+          <div className="mb-6 p-4 rounded-xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-200 text-xs font-semibold flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
             <span>{mensagem}</span>
           </div>
         )}
 
         {erro && (
-          <div className="p-4 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-sm flex items-center gap-3 animate-in fade-in">
-            <ShieldAlert className="w-5 h-5 flex-shrink-0" />
+          <div className="mb-6 p-4 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs font-semibold flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
             <span>{erro}</span>
           </div>
         )}
 
-        {/* Grade de Perfis Didáticos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {perfis.map((p) => {
-            const isLoading = loadingEmail === p.email;
-            return (
-              <div
-                key={p.email}
-                className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 hover:border-amber-400/50 hover:bg-slate-800 transition-all flex flex-col justify-between shadow-lg group"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <span className="text-3xl p-2 rounded-xl bg-slate-900 border border-slate-700 group-hover:scale-110 transition-transform">
-                      {p.icone}
-                    </span>
-                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${p.corBadge}`}>
-                      {p.badge}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors">
-                      {p.titulo}
-                    </h3>
-                    <p className="text-xs text-slate-300 font-medium">{p.nome}</p>
-                    <p className="text-[11px] text-slate-400 font-mono">{p.email}</p>
-                  </div>
-
-                  <p className="text-xs text-slate-300 leading-relaxed">{p.descricao}</p>
-
-                  <div className="pt-2">
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
-                      Módulos com Acesso Didático:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {p.sistemas.map((sis) => (
-                        <span
-                          key={sis}
-                          className="px-2 py-0.5 rounded bg-slate-900 text-slate-300 text-[10px] border border-slate-700 font-medium"
-                        >
-                          {sis}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-5 border-t border-slate-700/60 mt-4">
-                  <button
-                    onClick={() => handleEntrarComo(p)}
-                    disabled={isLoading || loadingEmail !== null}
-                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 hover:shadow-amber-500/30 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <span>{isLoading ? 'Autenticando...' : 'Entrar com este Perfil'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
+        {/* Card do Usuário Real Conectado */}
+        <div className="p-5 rounded-2xl bg-slate-900 border border-white/10 mb-8 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow">
+              {user?.nome?.charAt(0)}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white">{user?.nome}</h3>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold">
+                  Status: ATIVO HOMOLOGADO
+                </span>
               </div>
-            );
-          })}
+              <p className="text-xs text-slate-400 mt-0.5">
+                {user?.email} • {user?.unidadeSigla ? `${user.unidadeSigla} (Campus ${user.unidadeCampus || 'Central'})` : 'Campus Central'}
+                {user?.matricula && ` • Matrícula: ${user.matricula}`}
+              </p>
+            </div>
+          </div>
+
+          {/* Painel de Instrutor / Reset se for Admin Geral */}
+          {user?.isAdminGeral && (
+            <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-white/10 pt-3 sm:pt-0 sm:pl-4">
+              <button
+                type="button"
+                onClick={handleResetarTurma}
+                disabled={resetando}
+                className="px-3.5 py-2 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 font-bold text-xs flex items-center gap-2 shadow transition cursor-pointer disabled:opacity-50"
+                title="Reinicializar todos os chamados e dados didáticos do treinamento"
+              >
+                <RefreshCw className={`w-4 h-4 ${resetando ? 'animate-spin' : ''}`} />
+                <span>{resetando ? 'Resetando...' : 'Resetar Base Didática da Turma'}</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Links Rápidos para Subsistemas no Treinamento */}
-        <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 space-y-4">
-          <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-amber-400" />
-            Acesso Direto aos Subsistemas em Modo Treinamento
-          </h3>
-          <p className="text-xs text-slate-400">
-            Você também pode abrir os subsistemas diretamente com o modo treinamento ativado através das URLs abaixo:
-          </p>
+        {/* Grid de Subsistemas com Checagem de Permissão Real */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+              <span>Seus Subsistemas Habilitados para Treinamento</span>
+            </h3>
+            <span className="text-xs text-slate-400">
+              Clique para ingressar no módulo de treino com seus acessos
+            </span>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <a
-              href="https://climatizacao-uern.vercel.app/?treinamento=1"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 border border-slate-700 hover:border-amber-400/50 flex items-center justify-between text-xs text-slate-200 font-semibold transition-all group"
-            >
-              <div className="flex items-center gap-2.5">
-                <ThermometerSnowflake className="w-4 h-4 text-sky-400" />
-                <span>SIG-CLIMA (Climatização)</span>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400" />
-            </a>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 1. SIG-CLIMA */}
+            <div className={`p-6 rounded-2xl border transition flex flex-col justify-between shadow-lg relative ${
+              hasAccessClima
+                ? 'bg-slate-900/90 border-cyan-500/40 hover:border-cyan-400'
+                : 'bg-slate-900/40 border-white/5 opacity-60'
+            }`}>
+              <div>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                    <Snowflake className="w-6 h-6 animate-pulse" />
+                  </div>
+                  {hasAccessClima ? (
+                    <span className="px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-bold">
+                      Perfil Real: {user?.perfilClimatizacao || (user?.isAdminGeral ? 'ADMIN' : 'DEMANDANTE')}
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1 font-semibold">
+                      <Lock className="w-3.5 h-3.5" /> Sem Autorização Real
+                    </span>
+                  )}
+                </div>
 
-            <a
-              href="https://sgc-uern.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 border border-slate-700 hover:border-amber-400/50 flex items-center justify-between text-xs text-slate-200 font-semibold transition-all group"
-            >
-              <div className="flex items-center gap-2.5">
-                <FileText className="w-4 h-4 text-emerald-400" />
-                <span>SGC (Contratos e Atas)</span>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-lg font-bold text-white">SIG-CLIMA (Treinamento)</h4>
+                  <span className="text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-md">
+                    Climatização
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  Pratique abertura de chamados, regras de prioridade de sala de aula, diagnóstico com fotos e o fluxo de ateste tácito de 5 dias corridos sem custos reais.
+                </p>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400" />
-            </a>
 
-            <a
-              href="https://manutencao-uern.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 border border-slate-700 hover:border-amber-400/50 flex items-center justify-between text-xs text-slate-200 font-semibold transition-all group"
-            >
-              <div className="flex items-center gap-2.5">
-                <Wrench className="w-4 h-4 text-amber-400" />
-                <span>Manutenção Predial</span>
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
+                {hasAccessClima ? (
+                  <button
+                    type="button"
+                    onClick={() => handleLaunchSystemTreino('CLIMATIZACAO')}
+                    disabled={launchingSystem === 'CLIMATIZACAO'}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    <span>{launchingSystem === 'CLIMATIZACAO' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                    <Lock className="w-3.5 h-3.5" /> Solicitar homologação à PROAD
+                  </span>
+                )}
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400" />
-            </a>
+            </div>
 
-            <a
-              href="https://pca-uern.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 border border-slate-700 hover:border-amber-400/50 flex items-center justify-between text-xs text-slate-200 font-semibold transition-all group"
-            >
-              <div className="flex items-center gap-2.5">
-                <Building2 className="w-4 h-4 text-purple-400" />
-                <span>PCA (Contratações)</span>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400" />
-            </a>
+            {/* 2. SGC */}
+            <div className={`p-6 rounded-2xl border transition flex flex-col justify-between shadow-lg relative ${
+              hasAccessSgc
+                ? 'bg-slate-900/90 border-blue-500/40 hover:border-blue-400'
+                : 'bg-slate-900/40 border-white/5 opacity-60'
+            }`}>
+              <div>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  {hasAccessSgc ? (
+                    <span className="px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-bold">
+                      Perfil Real: {user?.perfilSgc || 'ADMIN'}
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1 font-semibold">
+                      <Lock className="w-3.5 h-3.5" /> Sem Autorização Real
+                    </span>
+                  )}
+                </div>
 
-            <a
-              href="https://diarias-proaduern.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 border border-slate-700 hover:border-amber-400/50 flex items-center justify-between text-xs text-slate-200 font-semibold transition-all group"
-            >
-              <div className="flex items-center gap-2.5">
-                <Plane className="w-4 h-4 text-indigo-400" />
-                <span>Diárias e Passagens</span>
+                <h4 className="text-lg font-bold text-white">SGC - Gestão de Contratos (Treinamento)</h4>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  Simulação de fiscalização de contratos, atas de registro de preços, medições mensais e emissão de atestes com dados didáticos temporários.
+                </p>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400" />
-            </a>
+
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
+                {hasAccessSgc ? (
+                  <button
+                    type="button"
+                    onClick={() => handleLaunchSystemTreino('SGC')}
+                    disabled={launchingSystem === 'SGC'}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    <span>{launchingSystem === 'SGC' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                    <Lock className="w-3.5 h-3.5" /> Solicitar homologação à PROAD
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 3. Manutenção Predial */}
+            <div className={`p-6 rounded-2xl border transition flex flex-col justify-between shadow-lg relative ${
+              hasAccessManut
+                ? 'bg-slate-900/90 border-emerald-500/40 hover:border-emerald-400'
+                : 'bg-slate-900/40 border-white/5 opacity-60'
+            }`}>
+              <div>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <Wrench className="w-6 h-6" />
+                  </div>
+                  {hasAccessManut ? (
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
+                      Perfil Real: {user?.perfilManut || 'ADMIN'}
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1 font-semibold">
+                      <Lock className="w-3.5 h-3.5" /> Sem Autorização Real
+                    </span>
+                  )}
+                </div>
+
+                <h4 className="text-lg font-bold text-white">Manutenção Predial (Treinamento)</h4>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  Pratique a abertura e fiscalização de Ordens de Serviço prediais estimativas, balanceamento de saldos e atestes de obras com segurança.
+                </p>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
+                {hasAccessManut ? (
+                  <button
+                    type="button"
+                    onClick={() => handleLaunchSystemTreino('MANUTENCAO')}
+                    disabled={launchingSystem === 'MANUTENCAO'}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    <span>{launchingSystem === 'MANUTENCAO' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                    <Lock className="w-3.5 h-3.5" /> Solicitar homologação à PROAD
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 4. PCA */}
+            <div className={`p-6 rounded-2xl border transition flex flex-col justify-between shadow-lg relative ${
+              hasAccessPca
+                ? 'bg-slate-900/90 border-purple-500/40 hover:border-purple-400'
+                : 'bg-slate-900/40 border-white/5 opacity-60'
+            }`}>
+              <div>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <ShoppingBag className="w-6 h-6" />
+                  </div>
+                  {hasAccessPca ? (
+                    <span className="px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-bold">
+                      Perfil Real: {user?.perfilPca || 'ADMIN'}
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1 font-semibold">
+                      <Lock className="w-3.5 h-3.5" /> Sem Autorização Real
+                    </span>
+                  )}
+                </div>
+
+                <h4 className="text-lg font-bold text-white">PCA - Contratações Anual (Treinamento)</h4>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  Simulação de elaboração de Documentos de Formalização de Demanda (DFD) e consolidação do plano anual de contratações.
+                </p>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
+                {hasAccessPca ? (
+                  <button
+                    type="button"
+                    onClick={() => handleLaunchSystemTreino('PCA')}
+                    disabled={launchingSystem === 'PCA'}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    <span>{launchingSystem === 'PCA' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                    <Lock className="w-3.5 h-3.5" /> Solicitar homologação à PROAD
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 5. Diárias */}
+            <div className={`p-6 rounded-2xl border transition flex flex-col justify-between shadow-lg relative ${
+              hasAccessDiarias
+                ? 'bg-slate-900/90 border-cyan-500/40 hover:border-cyan-400'
+                : 'bg-slate-900/40 border-white/5 opacity-60'
+            }`}>
+              <div>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                    <Plane className="w-6 h-6" />
+                  </div>
+                  {hasAccessDiarias ? (
+                    <span className="px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-bold">
+                      Perfil Real: {user?.perfilDiarias || 'ADMIN'}
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1 font-semibold">
+                      <Lock className="w-3.5 h-3.5" /> Sem Autorização Real
+                    </span>
+                  )}
+                </div>
+
+                <h4 className="text-lg font-bold text-white">Diárias e Passagens (Treinamento)</h4>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  Pratique solicitação de diárias, prestação de contas e homologação de bilhetes em ambiente de teste didático.
+                </p>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
+                {hasAccessDiarias ? (
+                  <button
+                    type="button"
+                    onClick={() => handleLaunchSystemTreino('DIARIAS')}
+                    disabled={launchingSystem === 'DIARIAS'}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    <span>{launchingSystem === 'DIARIAS' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                    <Lock className="w-3.5 h-3.5" /> Solicitar homologação à PROAD
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </main>
 
-      <footer className="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
-        Pró-Reitoria de Administração (PROAD) • Universidade do Estado do Rio Grande do Norte (UERN)
+      {/* Footer */}
+      <footer className="border-t border-white/10 bg-slate-950 px-6 py-4 text-center text-xs text-slate-400">
+        © 2026 Universidade do Estado do Rio Grande do Norte - UERN • Pró-Reitoria de Administração (PROAD)
       </footer>
     </div>
   );

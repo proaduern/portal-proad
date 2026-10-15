@@ -47,7 +47,7 @@ export async function GET() {
         perfilPca: userDb.perfilPca,
         permissoesPca: userDb.permissoesPca,
         perfilDiarias: userDb.perfilDiarias,
-        perfilClimatizacao: (userDb as any).perfilClimatizacao || (userDb.perfilSgc === 'ADMIN_PROAD' || userDb.perfilManut === 'ADMIN' ? 'ADMIN' : (userDb.tipoUsuario === 'FORNECEDOR_EXTERNO' ? 'EMPRESA' : 'DEMANDANTE')),
+        perfilClimatizacao: (userDb as any).perfilClimatizacao || (userDb.perfilSgc === 'ADMIN_PROAD' || userDb.perfilManut === 'ADMIN' ? 'ADMIN' : null),
         motivoDevolucao: userDb.motivoDevolucao,
         dataDevolucao: userDb.dataDevolucao,
         isAdminGeral: userDb.perfilSgc === 'ADMIN_PROAD' || userDb.perfilManut === 'ADMIN' || userDb.perfilPca === 'ADMIN' || (userDb as any).perfilClimatizacao === 'ADMIN',
