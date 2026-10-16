@@ -149,6 +149,14 @@ export default function HubPage() {
   const hasAccessDiarias = Boolean(user?.perfilDiarias || user?.isAdminGeral);
   const hasAccessClima = Boolean(user?.perfilClimatizacao || user?.isAdminGeral);
 
+  const totalSistemasAcessiveis = [
+    hasAccessSgc,
+    hasAccessClima,
+    hasAccessManut,
+    hasAccessPca,
+    hasAccessDiarias,
+  ].filter(Boolean).length;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
       {/* Top Header / Navbar */}
@@ -238,7 +246,7 @@ export default function HubPage() {
                 Olá, {user?.nome?.split(' ')[0]}!
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-2">
-                Você está no ambiente oficial de governança da UERN. Todas as ordens, demandas e atestes abertos aqui possuem efeito jurídico e administrativo pleno.
+                Você está no Portal Proad. Este sistema é voltado à serviços prestados no âmbito da Proad, conforme seu perfil de usuário.
               </p>
             </div>
             <div className="absolute right-0 bottom-0 translate-x-12 translate-y-12 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -315,306 +323,260 @@ export default function HubPage() {
           </div>
         </div>
 
-        {/* Grid dos 5 Sistemas */}
+        {/* Grid dos Sistemas Autorizados */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <span>Sistemas Integrados PROAD</span>
-              <span className="text-xs font-normal text-slate-500">(5 subsistemas disponíveis)</span>
+              <span>Sistemas Vinculados ao seu Perfil</span>
+              {totalSistemasAcessiveis > 0 && (
+                <span className="text-xs font-normal text-slate-500">
+                  ({totalSistemasAcessiveis} {totalSistemasAcessiveis === 1 ? 'subsistema disponível' : 'subsistemas disponíveis'})
+                </span>
+              )}
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 1. SGC - Gestão de Contratos e Terceirização */}
-            <div className={`rounded-2xl bg-slate-900/80 border p-6 transition flex flex-col justify-between shadow-lg relative group ${
-              hasAccessSgc ? 'border-white/10 hover:border-amber-500/40' : 'border-white/5 opacity-75'
-            }`}>
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  {hasAccessSgc ? (
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-                      Perfil Real: {user?.perfilSgc || 'ADMIN'}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Sem Acesso
-                    </span>
-                  )}
-                </div>
-
-                <h4 className="text-lg font-bold text-white group-hover:text-amber-400 transition">
-                  SGC - Contratos e Terceirização
-                </h4>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Gestão completa de Contratos Administrativos, Atas de Registro de Preços, fiscalização técnica e setorial, terceirização de mão de obra e controle de conta vinculada.
-                </p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
-                {hasAccessSgc ? (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchSystem('SGC')}
-                    disabled={launchingSystem === 'SGC'}
-                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
-                      modoAmbiente === 'TREINAMENTO'
-                        ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
-                        : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:from-amber-400 hover:to-amber-500'
-                    }`}
-                  >
-                    <span>
-                      {launchingSystem === 'SGC'
-                        ? 'Iniciando...'
-                        : modoAmbiente === 'TREINAMENTO'
-                        ? '🎓 Treinar no SGC'
-                        : 'Entrar no SGC'}
-                    </span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <span className="text-xs text-slate-500 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" /> Não autorizado no mundo real
-                  </span>
-                )}
-              </div>
+          {totalSistemasAcessiveis === 0 ? (
+            <div className="p-8 rounded-2xl bg-slate-900/80 border border-white/10 text-center">
+              <Lock className="w-10 h-10 text-amber-400 mx-auto mb-3" />
+              <h4 className="text-base font-bold text-white">Nenhum subsistema vinculado ao seu perfil</h4>
+              <p className="text-xs text-slate-400 mt-2 max-w-md mx-auto">
+                Seu cadastro está ativo no Portal PROAD, mas ainda não possui perfil de acesso vinculado aos subsistemas da PROAD. Entre em contato com a Pró-Reitoria de Administração para solicitar a autorização.
+              </p>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 1. SGC - Gestão de Contratos e Terceirização */}
+              {hasAccessSgc && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-amber-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                        <FileText className="w-6 h-6" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                        Perfil Real: {user?.perfilSgc || 'ADMIN'}
+                      </span>
+                    </div>
 
-            {/* 2. SIG-CLIMA - Climatização e Refrigeração */}
-            <div className={`rounded-2xl bg-slate-900/80 border p-6 transition flex flex-col justify-between shadow-lg relative group ${
-              hasAccessClima ? 'border-white/10 hover:border-cyan-500/40' : 'border-white/5 opacity-75'
-            }`}>
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                    <Snowflake className="w-6 h-6 animate-pulse" />
+                    <h4 className="text-lg font-bold text-white group-hover:text-amber-400 transition">
+                      SGC - Contratos e Terceirização
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Gestão completa de Contratos Administrativos, Atas de Registro de Preços, fiscalização técnica e setorial, terceirização de mão de obra e controle de conta vinculada.
+                    </p>
                   </div>
-                  {hasAccessClima ? (
-                    <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold">
-                      Perfil Real: {user?.perfilClimatizacao || (user?.isAdminGeral ? 'ADMIN' : 'DEMANDANTE')}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Sem Acesso
-                    </span>
-                  )}
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <h4 className="text-lg font-bold text-white group-hover:text-cyan-400 transition">
-                    Climatização e Refrigeração
-                  </h4>
-                  <span className="text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-md">
-                    SIG-CLIMA
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Chamados e manutenção de condicionadores de ar, geladeiras, freezers e bebedouros de toda a UERN. Gestão de garantia de 90 dias, priorização de salas de aula e ateste tácito de 5 dias.
-                </p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
-                {hasAccessClima ? (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchSystem('CLIMATIZACAO')}
-                    disabled={launchingSystem === 'CLIMATIZACAO'}
-                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
-                      modoAmbiente === 'TREINAMENTO'
-                        ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
-                        : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 hover:from-cyan-400 hover:to-blue-500'
-                    }`}
-                  >
-                    <span>
-                      {launchingSystem === 'CLIMATIZACAO'
-                        ? 'Iniciando...'
-                        : modoAmbiente === 'TREINAMENTO'
-                        ? '🎓 Treinar no SIG-CLIMA'
-                        : 'Entrar no SIG-CLIMA'}
-                    </span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <span className="text-xs text-slate-500 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" /> Não autorizado no mundo real
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* 3. Manutenção Predial - Ordem de Serviço */}
-            <div className={`rounded-2xl bg-slate-900/80 border p-6 transition flex flex-col justify-between shadow-lg relative group ${
-              hasAccessManut ? 'border-white/10 hover:border-emerald-500/40' : 'border-white/5 opacity-75'
-            }`}>
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                    <Wrench className="w-6 h-6" />
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystem('SGC')}
+                      disabled={launchingSystem === 'SGC'}
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modoAmbiente === 'TREINAMENTO'
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
+                          : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:from-amber-400 hover:to-amber-500'
+                      }`}
+                    >
+                      <span>
+                        {launchingSystem === 'SGC'
+                          ? 'Iniciando...'
+                          : modoAmbiente === 'TREINAMENTO'
+                          ? '🎓 Treinar no SGC'
+                          : 'Entrar no SGC'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
-                  {hasAccessManut ? (
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-                      Perfil Real: {user?.perfilManut || 'ADMIN'}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Sem Acesso
-                    </span>
-                  )}
                 </div>
+              )}
 
-                <h4 className="text-lg font-bold text-white group-hover:text-emerald-400 transition">
-                  Manutenção Predial & Ordem de Serviço
-                </h4>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Abertura de chamados, vistorias prediais, execução de Ordens de Serviço (OS) pela SOBE e empresas contratadas em todos os campi da UERN.
-                </p>
-              </div>
+              {/* 2. SIG-CLIMA - Climatização e Refrigeração */}
+              {hasAccessClima && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-cyan-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                        <Snowflake className="w-6 h-6 animate-pulse" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold">
+                        Perfil Real: {user?.perfilClimatizacao || (user?.isAdminGeral ? 'ADMIN' : 'DEMANDANTE')}
+                      </span>
+                    </div>
 
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
-                {hasAccessManut ? (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchSystem('MANUTENCAO')}
-                    disabled={launchingSystem === 'MANUTENCAO'}
-                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
-                      modoAmbiente === 'TREINAMENTO'
-                        ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
-                        : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-slate-950 hover:from-emerald-400 hover:to-emerald-500'
-                    }`}
-                  >
-                    <span>
-                      {launchingSystem === 'MANUTENCAO'
-                        ? 'Iniciando...'
-                        : modoAmbiente === 'TREINAMENTO'
-                        ? '🎓 Treinar no Manutenção'
-                        : 'Entrar no Manutenção'}
-                    </span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <span className="text-xs text-slate-500 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" /> Não autorizado no mundo real
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* 4. PCA - Plano de Contratações Anual */}
-            <div className={`rounded-2xl bg-slate-900/80 border p-6 transition flex flex-col justify-between shadow-lg relative group ${
-              hasAccessPca ? 'border-white/10 hover:border-purple-500/40' : 'border-white/5 opacity-75'
-            }`}>
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
-                    <ShoppingBag className="w-6 h-6" />
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-lg font-bold text-white group-hover:text-cyan-400 transition">
+                        Climatização e Refrigeração
+                      </h4>
+                      <span className="text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-md">
+                        SIG-CLIMA
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Chamados e manutenção de condicionadores de ar, geladeiras, freezers e bebedouros de toda a UERN.
+                    </p>
                   </div>
-                  {hasAccessPca ? (
-                    <span className="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-semibold">
-                      Perfil Real: {user?.perfilPca || 'ADMIN'}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Sem Acesso
-                    </span>
-                  )}
-                </div>
 
-                <h4 className="text-lg font-bold text-white group-hover:text-purple-400 transition">
-                  PCA - Plano de Contratações Anual
-                </h4>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Planejamento e consolidação das demandas de aquisição de bens e contratação de serviços por todas as unidades da UERN. Sincronizado automaticamente com contratos vigentes.
-                </p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
-                {hasAccessPca ? (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchSystem('PCA')}
-                    disabled={launchingSystem === 'PCA'}
-                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
-                      modoAmbiente === 'TREINAMENTO'
-                        ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
-                        : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-400 hover:to-indigo-500'
-                    }`}
-                  >
-                    <span>
-                      {launchingSystem === 'PCA'
-                        ? 'Iniciando...'
-                        : modoAmbiente === 'TREINAMENTO'
-                        ? '🎓 Treinar no PCA'
-                        : 'Entrar no PCA'}
-                    </span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <span className="text-xs text-slate-500 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" /> Não autorizado no mundo real
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* 5. Diárias e Passagens */}
-            <div className={`rounded-2xl bg-slate-900/80 border p-6 transition flex flex-col justify-between shadow-lg relative group ${
-              hasAccessDiarias ? 'border-white/10 hover:border-cyan-500/40' : 'border-white/5 opacity-75'
-            }`}>
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                    <Plane className="w-6 h-6" />
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystem('CLIMATIZACAO')}
+                      disabled={launchingSystem === 'CLIMATIZACAO'}
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modoAmbiente === 'TREINAMENTO'
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
+                          : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 hover:from-cyan-400 hover:to-blue-500'
+                      }`}
+                    >
+                      <span>
+                        {launchingSystem === 'CLIMATIZACAO'
+                          ? 'Iniciando...'
+                          : modoAmbiente === 'TREINAMENTO'
+                          ? '🎓 Treinar no SIG-CLIMA'
+                          : 'Entrar no SIG-CLIMA'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
-                  {hasAccessDiarias ? (
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-                      Perfil Real: {user?.perfilDiarias || 'ADMIN'}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Sem Acesso
-                    </span>
-                  )}
                 </div>
+              )}
 
-                <h4 className="text-lg font-bold text-white group-hover:text-cyan-400 transition">
-                  Diárias e Passagens
-                </h4>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Solicitação de deslocamentos institucionais, autorização prévia por gestores, emissão de bilhetes aéreos e prestação de contas de diárias.
-                </p>
-              </div>
+              {/* 3. Manutenção Predial - Ordem de Serviço */}
+              {hasAccessManut && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                        <Wrench className="w-6 h-6" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                        Perfil Real: {user?.perfilManut || 'ADMIN'}
+                      </span>
+                    </div>
 
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
-                {hasAccessDiarias ? (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchSystem('DIARIAS')}
-                    disabled={launchingSystem === 'DIARIAS'}
-                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
-                      modoAmbiente === 'TREINAMENTO'
-                        ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
-                        : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:from-amber-400 hover:to-amber-500'
-                    }`}
-                  >
-                    <span>
-                      {launchingSystem === 'DIARIAS'
-                        ? 'Iniciando...'
-                        : modoAmbiente === 'TREINAMENTO'
-                        ? '🎓 Treinar no Diárias'
-                        : 'Entrar no Diárias'}
-                    </span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <span className="text-xs text-slate-500 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" /> Não autorizado no mundo real
-                  </span>
-                )}
-              </div>
+                    <h4 className="text-lg font-bold text-white group-hover:text-emerald-400 transition">
+                      Manutenção Predial & Ordem de Serviço
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Abertura de chamados, vistorias prediais, execução de Ordens de Serviço (OS) pela SOBE e empresas contratadas em todos os campi da UERN.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystem('MANUTENCAO')}
+                      disabled={launchingSystem === 'MANUTENCAO'}
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modoAmbiente === 'TREINAMENTO'
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
+                          : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-slate-950 hover:from-emerald-400 hover:to-emerald-500'
+                      }`}
+                    >
+                      <span>
+                        {launchingSystem === 'MANUTENCAO'
+                          ? 'Iniciando...'
+                          : modoAmbiente === 'TREINAMENTO'
+                          ? '🎓 Treinar no Manutenção'
+                          : 'Entrar no Manutenção'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. PCA - Plano de Contratações Anual */}
+              {hasAccessPca && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-purple-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                        <ShoppingBag className="w-6 h-6" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-semibold">
+                        Perfil Real: {user?.perfilPca || 'ADMIN'}
+                      </span>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white group-hover:text-purple-400 transition">
+                      PCA - Plano de Contratações Anual
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Planejamento e consolidação das demandas de aquisição de bens e contratação de serviços por todas as unidades da UERN. Sincronizado automaticamente com contratos vigentes.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystem('PCA')}
+                      disabled={launchingSystem === 'PCA'}
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modoAmbiente === 'TREINAMENTO'
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
+                          : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-400 hover:to-indigo-500'
+                      }`}
+                    >
+                      <span>
+                        {launchingSystem === 'PCA'
+                          ? 'Iniciando...'
+                          : modoAmbiente === 'TREINAMENTO'
+                          ? '🎓 Treinar no PCA'
+                          : 'Entrar no PCA'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Diárias e Passagens */}
+              {hasAccessDiarias && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-cyan-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                        <Plane className="w-6 h-6" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                        Perfil Real: {user?.perfilDiarias || 'ADMIN'}
+                      </span>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white group-hover:text-cyan-400 transition">
+                      Diárias e Passagens
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Solicitação de deslocamentos institucionais, autorização prévia por gestores, emissão de bilhetes aéreos e prestação de contas de diárias.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystem('DIARIAS')}
+                      disabled={launchingSystem === 'DIARIAS'}
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modoAmbiente === 'TREINAMENTO'
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
+                          : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:from-amber-400 hover:to-amber-500'
+                      }`}
+                    >
+                      <span>
+                        {launchingSystem === 'DIARIAS'
+                          ? 'Iniciando...'
+                          : modoAmbiente === 'TREINAMENTO'
+                          ? '🎓 Treinar no Diárias'
+                          : 'Entrar no Diárias'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       </main>
 

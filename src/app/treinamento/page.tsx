@@ -173,6 +173,14 @@ export default function TreinamentoPage() {
   const hasAccessDiarias = Boolean(user?.perfilDiarias || user?.isAdminGeral);
   const hasAccessClima = Boolean(user?.perfilClimatizacao || user?.isAdminGeral);
 
+  const totalSistemasAcessiveis = [
+    hasAccessSgc,
+    hasAccessClima,
+    hasAccessManut,
+    hasAccessPca,
+    hasAccessDiarias,
+  ].filter(Boolean).length;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
       {/* Header */}
@@ -298,258 +306,203 @@ export default function TreinamentoPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
               <span>Seus Subsistemas Habilitados para Treinamento</span>
+              {totalSistemasAcessiveis > 0 && (
+                <span className="text-xs font-normal text-slate-500">
+                  ({totalSistemasAcessiveis} {totalSistemasAcessiveis === 1 ? 'subsistema' : 'subsistemas'})
+                </span>
+              )}
             </h3>
             <span className="text-xs text-slate-400">
               Clique para ingressar no módulo de treino com seus acessos
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 1. SIG-CLIMA */}
-            <div className={`p-6 rounded-2xl border transition flex flex-col justify-between shadow-lg relative ${
-              hasAccessClima
-                ? 'bg-slate-900/90 border-cyan-500/40 hover:border-cyan-400'
-                : 'bg-slate-900/40 border-white/5 opacity-60'
-            }`}>
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                    <Snowflake className="w-6 h-6 animate-pulse" />
-                  </div>
-                  {hasAccessClima ? (
-                    <span className="px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-bold">
-                      Perfil Real: {user?.perfilClimatizacao || (user?.isAdminGeral ? 'ADMIN' : 'DEMANDANTE')}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1 font-semibold">
-                      <Lock className="w-3.5 h-3.5" /> Sem Autorização Real
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <h4 className="text-lg font-bold text-white">SIG-CLIMA (Treinamento)</h4>
-                  <span className="text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-md">
-                    Climatização
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Pratique abertura de chamados, regras de prioridade de sala de aula, diagnóstico com fotos e o fluxo de ateste tácito de 5 dias corridos sem custos reais.
-                </p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
-                {hasAccessClima ? (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchSystemTreino('CLIMATIZACAO')}
-                    disabled={launchingSystem === 'CLIMATIZACAO'}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                  >
-                    <span>{launchingSystem === 'CLIMATIZACAO' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" /> Solicitar homologação à PROAD
-                  </span>
-                )}
-              </div>
+          {totalSistemasAcessiveis === 0 ? (
+            <div className="p-8 rounded-2xl bg-slate-900/80 border border-white/10 text-center">
+              <Lock className="w-10 h-10 text-amber-400 mx-auto mb-3" />
+              <h4 className="text-base font-bold text-white">Nenhum subsistema habilitado para treinamento</h4>
+              <p className="text-xs text-slate-400 mt-2 max-w-md mx-auto">
+                Você só pode praticar no ambiente de treinamento nos subsistemas homologados para o seu perfil. Entre em contato com a PROAD para solicitar autorização.
+              </p>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 1. SIG-CLIMA */}
+              {hasAccessClima && (
+                <div className="p-6 rounded-2xl border bg-slate-900/90 border-cyan-500/40 hover:border-cyan-400 transition flex flex-col justify-between shadow-lg relative">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                        <Snowflake className="w-6 h-6 animate-pulse" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-bold">
+                        Perfil Real: {user?.perfilClimatizacao || (user?.isAdminGeral ? 'ADMIN' : 'DEMANDANTE')}
+                      </span>
+                    </div>
 
-            {/* 2. SGC */}
-            <div className={`p-6 rounded-2xl border transition flex flex-col justify-between shadow-lg relative ${
-              hasAccessSgc
-                ? 'bg-slate-900/90 border-blue-500/40 hover:border-blue-400'
-                : 'bg-slate-900/40 border-white/5 opacity-60'
-            }`}>
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                    <FileText className="w-6 h-6" />
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-lg font-bold text-white">SIG-CLIMA (Treinamento)</h4>
+                      <span className="text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-md">
+                        Climatização
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Chamados e manutenção de condicionadores de ar, geladeiras, freezers e bebedouros de toda a UERN.
+                    </p>
                   </div>
-                  {hasAccessSgc ? (
-                    <span className="px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-bold">
-                      Perfil Real: {user?.perfilSgc || 'ADMIN'}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1 font-semibold">
-                      <Lock className="w-3.5 h-3.5" /> Sem Autorização Real
-                    </span>
-                  )}
-                </div>
 
-                <h4 className="text-lg font-bold text-white">SGC - Gestão de Contratos (Treinamento)</h4>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Simulação de fiscalização de contratos, atas de registro de preços, medições mensais e emissão de atestes com dados didáticos temporários.
-                </p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
-                {hasAccessSgc ? (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchSystemTreino('SGC')}
-                    disabled={launchingSystem === 'SGC'}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                  >
-                    <span>{launchingSystem === 'SGC' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" /> Solicitar homologação à PROAD
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* 3. Manutenção Predial */}
-            <div className={`p-6 rounded-2xl border transition flex flex-col justify-between shadow-lg relative ${
-              hasAccessManut
-                ? 'bg-slate-900/90 border-emerald-500/40 hover:border-emerald-400'
-                : 'bg-slate-900/40 border-white/5 opacity-60'
-            }`}>
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                    <Wrench className="w-6 h-6" />
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystemTreino('CLIMATIZACAO')}
+                      disabled={launchingSystem === 'CLIMATIZACAO'}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      <span>{launchingSystem === 'CLIMATIZACAO' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
                   </div>
-                  {hasAccessManut ? (
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
-                      Perfil Real: {user?.perfilManut || 'ADMIN'}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1 font-semibold">
-                      <Lock className="w-3.5 h-3.5" /> Sem Autorização Real
-                    </span>
-                  )}
                 </div>
+              )}
 
-                <h4 className="text-lg font-bold text-white">Manutenção Predial (Treinamento)</h4>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Pratique a abertura e fiscalização de Ordens de Serviço prediais estimativas, balanceamento de saldos e atestes de obras com segurança.
-                </p>
-              </div>
+              {/* 2. SGC */}
+              {hasAccessSgc && (
+                <div className="p-6 rounded-2xl border bg-slate-900/90 border-blue-500/40 hover:border-blue-400 transition flex flex-col justify-between shadow-lg relative">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                        <FileText className="w-6 h-6" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-bold">
+                        Perfil Real: {user?.perfilSgc || 'ADMIN'}
+                      </span>
+                    </div>
 
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
-                {hasAccessManut ? (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchSystemTreino('MANUTENCAO')}
-                    disabled={launchingSystem === 'MANUTENCAO'}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                  >
-                    <span>{launchingSystem === 'MANUTENCAO' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" /> Solicitar homologação à PROAD
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* 4. PCA */}
-            <div className={`p-6 rounded-2xl border transition flex flex-col justify-between shadow-lg relative ${
-              hasAccessPca
-                ? 'bg-slate-900/90 border-purple-500/40 hover:border-purple-400'
-                : 'bg-slate-900/40 border-white/5 opacity-60'
-            }`}>
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
-                    <ShoppingBag className="w-6 h-6" />
+                    <h4 className="text-lg font-bold text-white">SGC - Gestão de Contratos (Treinamento)</h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Simulação de fiscalização de contratos, atas de registro de preços, medições mensais e emissão de atestes com dados didáticos temporários.
+                    </p>
                   </div>
-                  {hasAccessPca ? (
-                    <span className="px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-bold">
-                      Perfil Real: {user?.perfilPca || 'ADMIN'}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1 font-semibold">
-                      <Lock className="w-3.5 h-3.5" /> Sem Autorização Real
-                    </span>
-                  )}
-                </div>
 
-                <h4 className="text-lg font-bold text-white">PCA - Contratações Anual (Treinamento)</h4>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Simulação de elaboração de Documentos de Formalização de Demanda (DFD) e consolidação do plano anual de contratações.
-                </p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
-                {hasAccessPca ? (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchSystemTreino('PCA')}
-                    disabled={launchingSystem === 'PCA'}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                  >
-                    <span>{launchingSystem === 'PCA' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" /> Solicitar homologação à PROAD
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* 5. Diárias */}
-            <div className={`p-6 rounded-2xl border transition flex flex-col justify-between shadow-lg relative ${
-              hasAccessDiarias
-                ? 'bg-slate-900/90 border-cyan-500/40 hover:border-cyan-400'
-                : 'bg-slate-900/40 border-white/5 opacity-60'
-            }`}>
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                    <Plane className="w-6 h-6" />
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystemTreino('SGC')}
+                      disabled={launchingSystem === 'SGC'}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      <span>{launchingSystem === 'SGC' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
                   </div>
-                  {hasAccessDiarias ? (
-                    <span className="px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-bold">
-                      Perfil Real: {user?.perfilDiarias || 'ADMIN'}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center gap-1 font-semibold">
-                      <Lock className="w-3.5 h-3.5" /> Sem Autorização Real
-                    </span>
-                  )}
                 </div>
+              )}
 
-                <h4 className="text-lg font-bold text-white">Diárias e Passagens (Treinamento)</h4>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                  Pratique solicitação de diárias, prestação de contas e homologação de bilhetes em ambiente de teste didático.
-                </p>
-              </div>
+              {/* 3. Manutenção Predial */}
+              {hasAccessManut && (
+                <div className="p-6 rounded-2xl border bg-slate-900/90 border-emerald-500/40 hover:border-emerald-400 transition flex flex-col justify-between shadow-lg relative">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                        <Wrench className="w-6 h-6" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
+                        Perfil Real: {user?.perfilManut || 'ADMIN'}
+                      </span>
+                    </div>
 
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
-                {hasAccessDiarias ? (
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchSystemTreino('DIARIAS')}
-                    disabled={launchingSystem === 'DIARIAS'}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                  >
-                    <span>{launchingSystem === 'DIARIAS' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" /> Solicitar homologação à PROAD
-                  </span>
-                )}
-              </div>
+                    <h4 className="text-lg font-bold text-white">Manutenção Predial (Treinamento)</h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Pratique a abertura e fiscalização de Ordens de Serviço prediais estimativas, balanceamento de saldos e atestes de obras com segurança.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystemTreino('MANUTENCAO')}
+                      disabled={launchingSystem === 'MANUTENCAO'}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      <span>{launchingSystem === 'MANUTENCAO' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. PCA */}
+              {hasAccessPca && (
+                <div className="p-6 rounded-2xl border bg-slate-900/90 border-purple-500/40 hover:border-purple-400 transition flex flex-col justify-between shadow-lg relative">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                        <ShoppingBag className="w-6 h-6" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-bold">
+                        Perfil Real: {user?.perfilPca || 'ADMIN'}
+                      </span>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white">PCA - Contratações Anual (Treinamento)</h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Simulação de elaboração de Documentos de Formalização de Demanda (DFD) e consolidação do plano anual de contratações.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystemTreino('PCA')}
+                      disabled={launchingSystem === 'PCA'}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      <span>{launchingSystem === 'PCA' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Diárias */}
+              {hasAccessDiarias && (
+                <div className="p-6 rounded-2xl border bg-slate-900/90 border-cyan-500/40 hover:border-cyan-400 transition flex flex-col justify-between shadow-lg relative">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                        <Plane className="w-6 h-6" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-bold">
+                        Perfil Real: {user?.perfilDiarias || 'ADMIN'}
+                      </span>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white">Diárias e Passagens (Treinamento)</h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Pratique solicitação de diárias, prestação de contas e homologação de bilhetes em ambiente de teste didático.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Dados Didáticos Isolados</span>
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystemTreino('DIARIAS')}
+                      disabled={launchingSystem === 'DIARIAS'}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      <span>{launchingSystem === 'DIARIAS' ? 'Iniciando...' : 'Entrar no Treinamento'}</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       </main>
 
