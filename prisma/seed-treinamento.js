@@ -74,6 +74,9 @@ const UNIDADES_47 = [
   { codigo: '051', sigla: 'CEEICV', nome: 'Comitê Especializado - Eventos e Com. Visual', campus: 'Mossoró', email: 'ceeicv@uern.br', predioNome: 'Campus Central' },
   { codigo: '052', sigla: 'CEEL', nome: 'Comitê Especializado - Esportes e Lazer', campus: 'Mossoró', email: 'ceel@uern.br', predioNome: 'Campus Central' },
   { codigo: '053', sigla: 'CEFAV', nome: 'Comitê Especializado - Fotografia, Audio e Vídeo', campus: 'Mossoró', email: 'cefav@uern.br', predioNome: 'Campus Central' },
+  { codigo: '010-06', sigla: 'DLC', nome: 'Diretoria de Licitações e Contratos (DLC)', campus: 'Mossoró', email: 'dlc@uern.br', predioNome: 'Edifício Epílogo de Campos (PROAD)' },
+  { codigo: '016', sigla: 'PROPLAN', nome: 'Pró-Reitoria de Planejamento, Orçamento e Finanças (PROPLAN)', campus: 'Mossoró', email: 'proplan@uern.br', predioNome: 'Edifício Epílogo de Campos' },
+  { codigo: '054', sigla: 'COMISSAO-RADIO-TV', nome: 'Comissão Rádio e TV', campus: 'Mossoró', email: 'comissao.radiotv@uern.br', predioNome: 'Campus Central' },
 ];
 
 async function runSeedPortalTreinamento() {
