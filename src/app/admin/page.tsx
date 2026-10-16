@@ -1273,6 +1273,7 @@ export default function AdminPage() {
                       <option value="FISCAL_TECNICO">Fiscal Técnico do Contrato</option>
                       <option value="FISCAL_ADM">Fiscal Administrativo do Contrato</option>
                       <option value="FISCAL_SETORIAL">Fiscal Setorial da Unidade</option>
+                      <option value="SUPLENTE">Suplente de Fiscalização</option>
                       <option value="GESTOR">Gestor de Contratos</option>
                       <option value="GESTOR_ATA">Gestor de Ata de Registro de Preços</option>
                       <option value="ADMIN_PROAD">Administrador Geral PROAD</option>
@@ -1396,6 +1397,8 @@ export default function AdminPage() {
                     <>
                       <option value="DEMANDANTE">Demandante (Abre e Acompanha Chamados)</option>
                       <option value="FISCAL_TECNICO">Fiscal Técnico de Climatização</option>
+                      <option value="FISCAL_ADM">Fiscal Administrativo de Climatização</option>
+                      <option value="GESTOR">Gestor de Contrato de Climatização</option>
                       <option value="ADMIN">Administrador Geral de Climatização (PROAD)</option>
                     </>
                   ) : (
@@ -1788,9 +1791,11 @@ export default function AdminPage() {
                       <option value="">Nenhum</option>
                       <option value="ADMIN_PROAD">ADMIN_PROAD</option>
                       <option value="GESTOR">GESTOR</option>
+                      <option value="GESTOR_ATA">GESTOR_ATA</option>
                       <option value="FISCAL_ADM">FISCAL_ADM</option>
                       <option value="FISCAL_TECNICO">FISCAL_TECNICO</option>
                       <option value="FISCAL_SETORIAL">FISCAL_SETORIAL</option>
+                      <option value="SUPLENTE">SUPLENTE</option>
                       <option value="FORNECEDOR">FORNECEDOR</option>
                     </select>
                   </div>
@@ -1806,6 +1811,7 @@ export default function AdminPage() {
                       <option value="ADMIN">ADMIN</option>
                       <option value="GESTOR_UNIDADE">GESTOR_UNIDADE</option>
                       <option value="FISCAL_TECNICO">FISCAL_TECNICO</option>
+                      <option value="FISCAL_ADM">FISCAL_ADM</option>
                       <option value="DEMANDANTE">DEMANDANTE</option>
                       <option value="TECNICO_SOBE">TECNICO_SOBE</option>
                       <option value="EMPRESA">EMPRESA</option>
@@ -1851,6 +1857,8 @@ export default function AdminPage() {
                       <option value="ADMIN">ADMIN</option>
                       <option value="DEMANDANTE">DEMANDANTE</option>
                       <option value="FISCAL_TECNICO">FISCAL_TECNICO</option>
+                      <option value="FISCAL_ADM">FISCAL_ADM</option>
+                      <option value="GESTOR">GESTOR</option>
                       <option value="EMPRESA">EMPRESA</option>
                     </select>
                   </div>

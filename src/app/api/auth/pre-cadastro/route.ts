@@ -62,6 +62,58 @@ export async function POST(request: NextRequest) {
 
     const cpfFormatado = formatarCpf(cpf);
 
+    // 5.1 Reconciliação automática com SGC (public.usuarios) e Climatização (climatizacao.clima_usuarios)
+    let perfilSgcHerdado: string | null = null;
+    let perfilClimaHerdado: string | null = null;
+    const matSemZero = matriculaFormatada.replace(/^0+/, '');
+
+    try {
+      const sgcMatches: any[] = await prisma.$queryRawUnsafe(
+        `SELECT id, email, matricula, role FROM "public"."usuarios" WHERE LOWER(email) = $1 OR matricula = $2 OR matricula = $3 LIMIT 1`,
+        emailLimpo,
+        matriculaFormatada,
+        matSemZero
+      );
+      if (sgcMatches.length > 0) {
+        const sgcUser = sgcMatches[0];
+        const r = (sgcUser.role || '').toUpperCase();
+        if (r === 'FISCAL_ADMINISTRATIVO') perfilSgcHerdado = 'FISCAL_ADM';
+        else if (['ADMIN_PROAD', 'GESTOR', 'GESTOR_ATA', 'FISCAL_TECNICO', 'FISCAL_SETORIAL', 'SUPLENTE', 'FORNECEDOR'].includes(r)) {
+          perfilSgcHerdado = r;
+        }
+        await prisma.$executeRawUnsafe(
+          `UPDATE "public"."usuarios" SET nome = $1, matricula = $2 WHERE id = $3`,
+          nome.trim(),
+          matriculaFormatada,
+          sgcUser.id
+        );
+      }
+    } catch (e) {
+      // Ignora caso schema não esteja disponível
+    }
+
+    try {
+      const climaMatches: any[] = await prisma.$queryRawUnsafe(
+        `SELECT id, email, matricula, role FROM "climatizacao"."clima_usuarios" WHERE LOWER(email) = $1 OR matricula = $2 OR matricula = $3 LIMIT 1`,
+        emailLimpo,
+        matriculaFormatada,
+        matSemZero
+      );
+      if (climaMatches.length > 0) {
+        const climaUser = climaMatches[0];
+        if (climaUser.role) perfilClimaHerdado = climaUser.role;
+        await prisma.$executeRawUnsafe(
+          `UPDATE "climatizacao"."clima_usuarios" SET nome = $1, cpf = $2, matricula = $3 WHERE id = $4`,
+          nome.trim(),
+          cpfFormatado,
+          matriculaFormatada,
+          climaUser.id
+        );
+      }
+    } catch (e) {
+      // Ignora caso schema não esteja disponível
+    }
+
     // 6. Verifica se o usuário já existe
     const usuarioExistente = await prisma.usuarioCentral.findUnique({
       where: { email: emailLimpo },
@@ -91,6 +143,8 @@ export async function POST(request: NextRequest) {
           status: 'PENDENTE_APROVACAO',
           motivoDevolucao: null,
           dataDevolucao: null,
+          ...(perfilSgcHerdado && !usuarioExistente.perfilSgc ? { perfilSgc: perfilSgcHerdado } : {}),
+          ...(perfilClimaHerdado && !(usuarioExistente as any).perfilClimatizacao ? { perfilClimatizacao: perfilClimaHerdado } : {}),
         },
         include: { unidade: true },
       });
@@ -115,6 +169,8 @@ export async function POST(request: NextRequest) {
           telefone: telefone ? telefone.trim() : null,
           fotoUrl: fotoUrl || null,
           unidadeId: unidade.id,
+          perfilSgc: perfilSgcHerdado,
+          perfilClimatizacao: perfilClimaHerdado,
         },
         include: { unidade: true },
       });

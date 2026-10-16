@@ -115,6 +115,8 @@ export async function generateSsoToken(usuario: SessionPayload & { unidadeEmail?
     unidadeSigla: usuario.unidadeSigla,
     unidadeNome: usuario.unidadeNome,
     unidadeEmail: usuario.unidadeEmail,
+    cnpjEmpresa: usuario.cnpjEmpresa,
+    razaoSocial: usuario.razaoSocial,
     targetSystem,
     role:
       targetSystem === 'SGC'

@@ -94,6 +94,9 @@ export default function PreCadastroPage() {
           if (parsed.nome && parsed.nome.trim().includes(' ')) {
             setNome(parsed.nome.trim());
           }
+          if (parsed.matricula) {
+            setMatricula(normalizarMatriculaUern(parsed.matricula));
+          }
         } catch (e) {
           console.error(e);
         }

@@ -116,7 +116,7 @@ async function main() {
     {
       email: 'pedroreboucas@uern.br',
       nome: 'Pedro Rebouças de Oliveira Neto',
-      cpf: '012.345.678-90',
+      cpf: '061.607.074-85',
       matricula: '008155-8',
       telefone: '(84) 3315-2100',
       perfilSgc: 'ADMIN_PROAD',

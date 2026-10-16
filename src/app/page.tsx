@@ -104,7 +104,10 @@ export default function LoginPage() {
       if (data.redirect) {
         // Se for primeiro acesso, grava dados temporários no sessionStorage para preencher a tela de pré-cadastro
         if (data.status === 'PRIMEIRO_ACESSO') {
-          sessionStorage.setItem('preCadastro_google', JSON.stringify({ email: data.email, nome: data.nome }));
+          sessionStorage.setItem(
+            'preCadastro_google',
+            JSON.stringify({ email: data.email, nome: data.nome, matricula: data.matricula || '' })
+          );
         }
         router.push(data.redirect);
       }

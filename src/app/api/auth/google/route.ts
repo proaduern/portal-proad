@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { setSessionCookie } from '@/lib/auth';
-import { validarEmailInstitucional } from '@/lib/validators';
+import { validarEmailInstitucional, normalizarMatriculaUern } from '@/lib/validators';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,16 +33,34 @@ export async function POST(request: NextRequest) {
       include: { unidade: true },
     });
 
-    // 3. Caso não exista: primeiro acesso detectado
+    // 3. Caso não exista no Portal: verifica se já existe no SGC (public.usuarios) ou Climatização para pré-preencher dados oficiais
     if (!usuarioExistente) {
-      // Não sugerir prefixo de login (ex: mariosergio). Exigir nome completo civil.
       const nomeGoogle = (nome || '').trim();
-      const nomeValido = nomeGoogle.includes(' ') ? nomeGoogle : '';
+      let nomeValido = nomeGoogle.includes(' ') ? nomeGoogle : '';
+      let matriculaPrevia = '';
+
+      try {
+        const sgcRows: any[] = await prisma.$queryRawUnsafe(
+          `SELECT nome, matricula, role FROM "public"."usuarios" WHERE LOWER(email) = $1 LIMIT 1`,
+          emailLimpo
+        );
+        if (sgcRows.length > 0) {
+          if (sgcRows[0].nome && sgcRows[0].nome.trim().includes(' ')) {
+            nomeValido = sgcRows[0].nome.trim();
+          }
+          if (sgcRows[0].matricula) {
+            matriculaPrevia = normalizarMatriculaUern(sgcRows[0].matricula);
+          }
+        }
+      } catch (e) {
+        // Ignora erro caso tabela não esteja acessível
+      }
 
       return NextResponse.json({
         status: 'PRIMEIRO_ACESSO',
         email: emailLimpo,
         nome: nomeValido,
+        matricula: matriculaPrevia,
         fotoUrl: fotoUrl || null,
         redirect: '/pre-cadastro',
       });

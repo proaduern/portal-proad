@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
         razaoSocial: fornecedor.razaoSocial,
         perfilSgc: fornecedor.perfilSgc,
         perfilManut: fornecedor.perfilManut,
+        perfilClimatizacao: (fornecedor as any).perfilClimatizacao,
       });
 
       if (fornecedor.status === 'PENDENTE_APROVACAO' || fornecedor.status === 'DEVOLVIDO_CORRECAO') {
@@ -129,6 +130,46 @@ export async function POST(request: NextRequest) {
 
       const senhaHash = await hashPassword(senha);
 
+      // Reconciliação automática com SGC (public.fornecedores / public.usuarios) e Climatização (climatizacao.clima_empresas / clima_usuarios)
+      let perfilClimaSugerido: string | null = null;
+      let razaoSocialReconciliada = razaoSocial.trim();
+
+      try {
+        const sgcForn = await prisma.$queryRawUnsafe<Array<{ id: string; razaoSocial: string }>>(
+          `SELECT id, "razaoSocial" FROM public.fornecedores WHERE cnpj = $1 OR LOWER(email) = $2 LIMIT 1`,
+          cnpjFormatado,
+          emailLimpo
+        );
+        if (sgcForn && sgcForn.length > 0) {
+          if (sgcForn[0].razaoSocial) razaoSocialReconciliada = sgcForn[0].razaoSocial;
+          await prisma.$executeRawUnsafe(
+            `UPDATE public.fornecedores SET email = COALESCE(email, $1), telefone = COALESCE($2, telefone), "updatedAt" = NOW() WHERE id = $3`,
+            emailLimpo,
+            telefone ? telefone.trim() : null,
+            sgcForn[0].id
+          );
+        }
+
+        const climaEmp = await prisma.$queryRawUnsafe<Array<{ id: string; razaoSocial: string }>>(
+          `SELECT id, "razaoSocial" FROM climatizacao.clima_empresas WHERE cnpj = $1 OR LOWER(email) = $2 LIMIT 1`,
+          cnpjFormatado,
+          emailLimpo
+        );
+        if (climaEmp && climaEmp.length > 0) {
+          perfilClimaSugerido = 'EMPRESA';
+          if (climaEmp[0].razaoSocial) razaoSocialReconciliada = climaEmp[0].razaoSocial;
+          await prisma.$executeRawUnsafe(
+            `UPDATE climatizacao.clima_usuarios SET nome = $1, cpf = $2, "updatedAt" = NOW() WHERE LOWER(email) = $3 OR "empresaId" = $4`,
+            nome.trim(),
+            cpfFormatado,
+            emailLimpo,
+            climaEmp[0].id
+          );
+        }
+      } catch (reconcileErr) {
+        console.warn('Aviso ao reconciliar fornecedor com SGC/Climatização:', reconcileErr);
+      }
+
       const novoFornecedor = await prisma.usuarioCentral.create({
         data: {
           tipoUsuario: 'FORNECEDOR_EXTERNO',
@@ -138,13 +179,14 @@ export async function POST(request: NextRequest) {
           cpf: cpfFormatado,
           senhaHash,
           cnpjEmpresa: cnpjFormatado,
-          razaoSocial: razaoSocial.trim(),
-          nomeFantasia: nomeFantasia ? nomeFantasia.trim() : razaoSocial.trim(),
+          razaoSocial: razaoSocialReconciliada,
+          nomeFantasia: nomeFantasia ? nomeFantasia.trim() : razaoSocialReconciliada,
           cargoPreposto: cargoPreposto ? cargoPreposto.trim() : 'Preposto / Representante',
           telefone: telefone ? telefone.trim() : null,
-          // Perfil padrão sugerido no SGC e Manutenção quando for homologado
+          // Perfil padrão sugerido no SGC, Manutenção e Climatização quando for homologado
           perfilSgc: 'FORNECEDOR',
           perfilManut: 'EMPRESA',
+          perfilClimatizacao: perfilClimaSugerido,
         },
       });
 
@@ -158,6 +200,7 @@ export async function POST(request: NextRequest) {
             cnpj: novoFornecedor.cnpjEmpresa,
             razaoSocial: novoFornecedor.razaoSocial,
             preposto: novoFornecedor.nome,
+            reconciliadoClimatizacao: Boolean(perfilClimaSugerido),
           },
         },
       });
@@ -172,6 +215,9 @@ export async function POST(request: NextRequest) {
         status: 'PENDENTE_APROVACAO',
         cnpjEmpresa: novoFornecedor.cnpjEmpresa,
         razaoSocial: novoFornecedor.razaoSocial,
+        perfilSgc: novoFornecedor.perfilSgc,
+        perfilManut: novoFornecedor.perfilManut,
+        perfilClimatizacao: (novoFornecedor as any).perfilClimatizacao,
       });
 
       return NextResponse.json({
