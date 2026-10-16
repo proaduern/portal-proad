@@ -8,7 +8,7 @@ import {
   validarEmailInstitucional,
   formatarCpf,
   formatarCnpj,
-  formatarMatricula,
+  normalizarMatriculaUern,
 } from '@/lib/validators';
 
 export const dynamic = 'force-dynamic';
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
         cpf: cpfFormatado,
         telefone: telefone ? telefone.trim() : null,
         senhaHash,
-        matricula: matricula ? formatarMatricula(matricula) : null,
+        matricula: matricula ? normalizarMatriculaUern(matricula) : null,
         unidadeId: unidadeId || null,
         cnpjEmpresa: cnpjEmpresa ? formatarCnpj(cnpjEmpresa) : null,
         razaoSocial: razaoSocial ? razaoSocial.trim() : null,

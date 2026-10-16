@@ -348,6 +348,7 @@ export default function AdminPage() {
   // Salvar usuário manual (Criar ou Editar)
   const handleSalvarUsuario = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     setSubmetendo(true);
     try {
       const url =
@@ -356,10 +357,17 @@ export default function AdminPage() {
           : `/api/admin/usuarios/${modalUsuario.usuario?.id}`;
       const method = modalUsuario.modo === 'CRIAR' ? 'POST' : 'PUT';
 
+      const payload = {
+        ...usuarioForm,
+        cpf: usuarioForm.cpf ? formatarCpf(usuarioForm.cpf) : '',
+        matricula: usuarioForm.matricula ? normalizarMatriculaUern(usuarioForm.matricula) : '',
+      };
+      setUsuarioForm(payload);
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(usuarioForm),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -1718,9 +1726,12 @@ export default function AdminPage() {
                     <input
                       type="text"
                       value={usuarioForm.matricula}
-                      onChange={(e) => setUsuarioForm({ ...usuarioForm, matricula: formatarMatricula(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white outline-none focus:border-amber-500"
+                      onChange={(e) => setUsuarioForm({ ...usuarioForm, matricula: e.target.value.replace(/[^\d-]/g, '').slice(0, 8) })}
+                      onBlur={(e) => setUsuarioForm({ ...usuarioForm, matricula: normalizarMatriculaUern(e.target.value) })}
+                      placeholder="Ex: 81558 -> 008155-8"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white font-mono outline-none focus:border-amber-500"
                     />
+                    <span className="text-[10px] text-slate-500 mt-0.5 block">Zeros automáticos ao sair do campo (ex: 81558 → 008155-8)</span>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-300 mb-1">Unidade UERN</label>

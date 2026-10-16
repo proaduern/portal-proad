@@ -5,9 +5,10 @@ import {
   validarCpf,
   validarCnpj,
   validarMatricula,
+  validarEmailInstitucional,
   formatarCpf,
   formatarCnpj,
-  formatarMatricula,
+  normalizarMatriculaUern,
 } from '@/lib/validators';
 
 export const dynamic = 'force-dynamic';
@@ -66,7 +67,10 @@ export async function PUT(
     }
 
     const {
+      tipoUsuario,
       nome,
+      email,
+      cpf,
       status,
       motivoBloqueio,
       telefone,
@@ -87,7 +91,41 @@ export async function PUT(
 
     const dataToUpdate: any = {};
 
+    if (tipoUsuario) dataToUpdate.tipoUsuario = tipoUsuario;
     if (nome) dataToUpdate.nome = nome.trim();
+
+    if (email !== undefined && email.trim()) {
+      const emailLimpo = email.trim().toLowerCase();
+      if ((tipoUsuario || usuarioExistente.tipoUsuario) === 'SERVIDOR_UERN' && !validarEmailInstitucional(emailLimpo)) {
+        return NextResponse.json({ error: 'Servidores UERN devem possuir e-mail institucional @uern.br.' }, { status: 400 });
+      }
+      if (emailLimpo !== usuarioExistente.email) {
+        const emailEmUso = await prisma.usuarioCentral.findFirst({
+          where: { email: emailLimpo, id: { not: id } },
+        });
+        if (emailEmUso) {
+          return NextResponse.json({ error: 'Já existe outro usuário cadastrado com este E-mail.' }, { status: 409 });
+        }
+        dataToUpdate.email = emailLimpo;
+      }
+    }
+
+    if (cpf !== undefined && cpf.trim()) {
+      const cpfFormatado = formatarCpf(cpf);
+      if (cpfFormatado !== usuarioExistente.cpf) {
+        if (!validarCpf(cpfFormatado)) {
+          return NextResponse.json({ error: 'O CPF informado é inválido.' }, { status: 400 });
+        }
+        const cpfEmUso = await prisma.usuarioCentral.findFirst({
+          where: { cpf: cpfFormatado, id: { not: id } },
+        });
+        if (cpfEmUso) {
+          return NextResponse.json({ error: 'Já existe outro usuário cadastrado com este CPF.' }, { status: 409 });
+        }
+        dataToUpdate.cpf = cpfFormatado;
+      }
+    }
+
     if (telefone !== undefined) dataToUpdate.telefone = telefone ? telefone.trim() : null;
     if (status) {
       dataToUpdate.status = status;
@@ -99,10 +137,11 @@ export async function PUT(
     }
 
     if (matricula !== undefined) {
-      if (matricula && !validarMatricula(matricula)) {
-        return NextResponse.json({ error: 'Formato de matrícula inválido (deve ser xxxxxx-x).' }, { status: 400 });
+      const matNormalizada = matricula ? normalizarMatriculaUern(matricula) : null;
+      if (matNormalizada && !validarMatricula(matNormalizada)) {
+        return NextResponse.json({ error: 'Formato de matrícula inválido (ex: 81558 ou 008155-8).' }, { status: 400 });
       }
-      dataToUpdate.matricula = matricula ? formatarMatricula(matricula) : null;
+      dataToUpdate.matricula = matNormalizada;
     }
 
     if (unidadeId !== undefined) {
@@ -154,6 +193,9 @@ export async function PUT(
         unidadeSigla: admin.unidadeSigla || 'PROAD',
         dadosAnteriores: {
           nome: usuarioExistente.nome,
+          email: usuarioExistente.email,
+          cpf: usuarioExistente.cpf,
+          matricula: usuarioExistente.matricula,
           status: usuarioExistente.status,
           perfilSgc: usuarioExistente.perfilSgc,
           perfilManut: usuarioExistente.perfilManut,
@@ -164,6 +206,9 @@ export async function PUT(
         },
         dadosNovos: {
           nome: usuarioAtualizado.nome,
+          email: usuarioAtualizado.email,
+          cpf: usuarioAtualizado.cpf,
+          matricula: usuarioAtualizado.matricula,
           status: usuarioAtualizado.status,
           perfilSgc: usuarioAtualizado.perfilSgc,
           perfilManut: usuarioAtualizado.perfilManut,

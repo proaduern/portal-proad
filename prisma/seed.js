@@ -99,144 +99,89 @@ async function main() {
     podeEditarDadosUnidade: true,
   };
 
-  const adminsMestres = [
+  const usuariosOficiais = [
     {
       email: 'adj.proad@uern.br',
-      nome: 'Administrador Adjunto PROAD',
+      nome: 'PROAD UERN',
       cpf: '001.002.003-04',
       matricula: '000001-0',
       telefone: '(84) 3315-2100',
+      perfilSgc: 'ADMIN_PROAD',
+      perfilManut: 'ADMIN',
+      perfilPca: 'ADMIN',
+      perfilDiarias: 'ADMIN',
+      perfilClimatizacao: 'ADMIN',
+      permissoesPca: permissoesPcaMaster,
     },
     {
       email: 'pedroreboucas@uern.br',
-      nome: 'Pedro Rebouças (Administrador Geral)',
-      cpf: '001.002.003-05',
-      matricula: '000002-0',
-      telefone: '(84) 99999-0001',
+      nome: 'Pedro Rebouças de Oliveira Neto',
+      cpf: '012.345.678-90',
+      matricula: '008155-8',
+      telefone: '(84) 3315-2100',
+      perfilSgc: 'ADMIN_PROAD',
+      perfilManut: 'ADMIN',
+      perfilPca: 'ADMIN',
+      perfilDiarias: 'ADMIN',
+      perfilClimatizacao: 'ADMIN',
+      permissoesPca: permissoesPcaMaster,
+    },
+    {
+      email: 'pedroeloy@uern.br',
+      nome: 'Pedro Eloy de Paiva Farias',
+      cpf: '065.299.384-27',
+      matricula: '012757-4',
+      telefone: '(84) 3315-2100',
+      perfilSgc: 'ADMIN_PROAD',
+      perfilManut: 'ADMIN',
+      perfilPca: 'UNIDADE',
+      perfilDiarias: 'DEMANDANTE',
+      perfilClimatizacao: 'ADMIN',
+      permissoesPca: { podeCriarDfd: true, podeEnviarDfd: true, podeVisualizarGeral: true },
+    },
+    {
+      email: 'mariosergio@uern.br',
+      nome: 'Mário Sérgio Leite',
+      cpf: '059.281.694-00',
+      matricula: '008977-0',
+      telefone: '(84) 3315-2100',
+      perfilSgc: 'FISCAL_ADM',
+      perfilManut: 'DEMANDANTE',
+      perfilPca: 'UNIDADE',
+      perfilDiarias: 'DEMANDANTE',
+      perfilClimatizacao: 'ADMIN',
+      permissoesPca: { podeCriarDfd: true, podeEnviarDfd: true, podeVisualizarGeral: true },
     },
   ];
 
-  for (const adm of adminsMestres) {
+  for (const usr of usuariosOficiais) {
     await prisma.usuarioCentral.upsert({
-      where: { email: adm.email },
+      where: { email: usr.email },
       update: {
         status: 'ATIVO',
-        nome: adm.nome,
-        perfilSgc: 'ADMIN_PROAD',
-        perfilManut: 'ADMIN',
-        perfilPca: 'ADMIN',
-        perfilDiarias: 'ADMIN',
-        perfilClimatizacao: 'ADMIN',
-        permissoesPca: permissoesPcaMaster,
         unidadeId: unidadesCriadas['PROAD'].id,
       },
       create: {
         tipoUsuario: 'SERVIDOR_UERN',
         status: 'ATIVO',
-        nome: adm.nome,
-        email: adm.email,
-        cpf: adm.cpf,
-        matricula: adm.matricula,
-        telefone: adm.telefone,
+        nome: usr.nome,
+        email: usr.email,
+        cpf: usr.cpf,
+        matricula: usr.matricula,
+        telefone: usr.telefone,
         senhaHash: senhaPadrao,
         unidadeId: unidadesCriadas['PROAD'].id,
-        perfilSgc: 'ADMIN_PROAD',
-        perfilManut: 'ADMIN',
-        perfilPca: 'ADMIN',
-        perfilDiarias: 'ADMIN',
-        perfilClimatizacao: 'ADMIN',
-        permissoesPca: permissoesPcaMaster,
+        perfilSgc: usr.perfilSgc,
+        perfilManut: usr.perfilManut,
+        perfilPca: usr.perfilPca,
+        perfilDiarias: usr.perfilDiarias,
+        perfilClimatizacao: usr.perfilClimatizacao,
+        permissoesPca: usr.permissoesPca,
         aprovadoEm: new Date(),
         aprovadoPor: 'SISTEMA_ORIGEM',
       },
     });
   }
-
-  // 4. Usuário Servidor Ativo com múltiplos perfis (Ex: Engenheiro Fiscal Técnico)
-  console.log('Cadastrando Servidor Ativo de Demonstração (Fiscal Técnico)...');
-  await prisma.usuarioCentral.upsert({
-    where: { email: 'fiscal.tecnico@uern.br' },
-    update: {},
-    create: {
-      tipoUsuario: 'SERVIDOR_UERN',
-      status: 'ATIVO',
-      nome: 'Eng. Roberto Alves (Fiscal Técnico)',
-      email: 'fiscal.tecnico@uern.br',
-      cpf: '123.456.789-09',
-      matricula: '002345-6',
-      telefone: '(84) 99888-1122',
-      senhaHash: senhaPadrao,
-      unidadeId: unidadesCriadas['SOBE'].id,
-      perfilSgc: 'FISCAL_TECNICO',
-      perfilManut: 'FISCAL_TECNICO',
-      perfilPca: 'UNIDADE',
-      permissoesPca: { podeCriarDfd: true, podeEditarDfd: true },
-      perfilDiarias: 'DEMANDANTE',
-      aprovadoEm: new Date(),
-      aprovadoPor: 'adj.proad@uern.br',
-    },
-  });
-
-  // 5. Servidor Pendente de Aprovação (Pré-Cadastro recente via Google)
-  console.log('Cadastrando Servidor Pendente de Homologação...');
-  await prisma.usuarioCentral.upsert({
-    where: { email: 'mariana.silva@uern.br' },
-    update: {},
-    create: {
-      tipoUsuario: 'SERVIDOR_UERN',
-      status: 'PENDENTE_APROVACAO',
-      nome: 'Prof. Mariana Silva',
-      email: 'mariana.silva@uern.br',
-      cpf: '543.210.987-65',
-      matricula: '009876-5',
-      telefone: '(84) 99123-4567',
-      unidadeId: unidadesCriadas['FAFIC'].id,
-    },
-  });
-
-  // 6. Fornecedor Aprovado (Empresa de Manutenção / Vigilância)
-  console.log('Cadastrando Fornecedor Aprovado...');
-  await prisma.usuarioCentral.upsert({
-    where: { email: 'contato@engenhariafacil.com.br' },
-    update: {},
-    create: {
-      tipoUsuario: 'FORNECEDOR_EXTERNO',
-      status: 'ATIVO',
-      nome: 'Carlos Eduardo Mendes',
-      email: 'contato@engenhariafacil.com.br',
-      cpf: '321.654.987-12',
-      cnpjEmpresa: '12.345.678/0001-90',
-      razaoSocial: 'Engenharia Fácil e Manutenções Ltda',
-      nomeFantasia: 'Engenharia Fácil',
-      cargoPreposto: 'Diretor de Operações / Preposto',
-      telefone: '(84) 3322-9988',
-      senhaHash: senhaPadrao,
-      perfilSgc: 'FORNECEDOR',
-      perfilManut: 'EMPRESA',
-      aprovadoEm: new Date(),
-      aprovadoPor: 'adj.proad@uern.br',
-    },
-  });
-
-  // 7. Fornecedor Pendente de Credenciamento
-  console.log('Cadastrando Fornecedor Pendente de Credenciamento...');
-  await prisma.usuarioCentral.upsert({
-    where: { email: 'licitacoes@potiguarservicos.com.br' },
-    update: {},
-    create: {
-      tipoUsuario: 'FORNECEDOR_EXTERNO',
-      status: 'PENDENTE_APROVACAO',
-      nome: 'Ana Paula Medeiros',
-      email: 'licitacoes@potiguarservicos.com.br',
-      cpf: '789.456.123-99',
-      cnpjEmpresa: '98.765.432/0001-10',
-      razaoSocial: 'Potiguar Serviços e Mão de Obra Eireli',
-      nomeFantasia: 'Potiguar Serviços',
-      cargoPreposto: 'Gerente Administrativa',
-      telefone: '(84) 98765-4321',
-      senhaHash: senhaPadrao,
-    },
-  });
 
   console.log('--- Seed do Portal PROAD-UERN concluído com sucesso! ---');
 }
