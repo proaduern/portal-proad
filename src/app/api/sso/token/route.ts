@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
         unidadeId: userDb.unidadeId,
         unidadeSigla: userDb.unidade?.sigla,
         unidadeNome: userDb.unidade?.nome,
+        unidadeEmail: userDb.unidade?.email,
         cnpjEmpresa: userDb.cnpjEmpresa,
         razaoSocial: userDb.razaoSocial,
         perfilSgc: userDb.perfilSgc,

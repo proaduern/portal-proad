@@ -83,7 +83,8 @@ export async function verifyAdminSession(): Promise<SessionPayload | null> {
     session.perfilPca === 'ADMIN' ||
     session.perfilDiarias === 'ADMIN' ||
     session.perfilClimatizacao === 'ADMIN' ||
-    session.email === 'adj.proad@uern.br';
+    session.email === 'adj.proad@uern.br' ||
+    session.email === 'pedroreboucas@uern.br';
 
   if (!isAdmin) return null;
   return session;
@@ -103,7 +104,7 @@ export async function clearSessionCookie(): Promise<void> {
  * Gera um token de Single Sign-On (SSO) com expiração curta (2 minutos)
  * para transição segura de clique do Launcher para os sistemas de destino.
  */
-export async function generateSsoToken(usuario: SessionPayload, targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO'): Promise<string> {
+export async function generateSsoToken(usuario: SessionPayload & { unidadeEmail?: string | null }, targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO'): Promise<string> {
   return new SignJWT({
     userId: usuario.id,
     nome: usuario.nome,
@@ -112,6 +113,8 @@ export async function generateSsoToken(usuario: SessionPayload, targetSystem: 'S
     matricula: usuario.matricula,
     unidadeId: usuario.unidadeId,
     unidadeSigla: usuario.unidadeSigla,
+    unidadeNome: usuario.unidadeNome,
+    unidadeEmail: usuario.unidadeEmail,
     targetSystem,
     role:
       targetSystem === 'SGC'

@@ -1001,8 +1001,13 @@ export default function AdminPage() {
                     </div>
 
                     <h4 className="text-sm font-bold text-white mt-2">{uni.nome}</h4>
+                    {uni.email && (
+                      <p className="text-xs text-amber-300/90 mt-1 font-medium">
+                        E-mail: {uni.email}
+                      </p>
+                    )}
                     {uni.predioNome && (
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-slate-400 mt-0.5">
                         Localização: {uni.predioNome}
                       </p>
                     )}
