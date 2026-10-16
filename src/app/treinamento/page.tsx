@@ -88,6 +88,10 @@ export default function TreinamentoPage() {
   ) => {
     setLaunchingSystem(targetSystem);
     setErro(null);
+
+    // Abre nova aba no momento do clique para contornar bloqueador de pop-ups
+    const novaAba = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
+
     try {
       const res = await fetch('/api/sso/token', {
         method: 'POST',
@@ -98,18 +102,26 @@ export default function TreinamentoPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (novaAba) novaAba.close();
         setErro(data.error || 'Erro ao gerar acesso ao treinamento.');
         setLaunchingSystem(null);
         return;
       }
 
       if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
+        if (novaAba) {
+          novaAba.location.href = data.redirectUrl;
+        } else {
+          window.open(data.redirectUrl, '_blank', 'noopener,noreferrer');
+        }
+        setLaunchingSystem(null);
       } else {
+        if (novaAba) novaAba.close();
         setErro('URL de redirecionamento não informada.');
         setLaunchingSystem(null);
       }
     } catch (err: any) {
+      if (novaAba) novaAba.close();
       setErro(err.message || 'Erro ao comunicar com o servidor.');
       setLaunchingSystem(null);
     }

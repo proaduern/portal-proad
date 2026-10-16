@@ -92,6 +92,10 @@ export default function HubPage() {
   ) => {
     const isTreino = forcarTreinamento !== undefined ? forcarTreinamento : modoAmbiente === 'TREINAMENTO';
     setLaunchingSystem(targetSystem);
+
+    // Abre a nova aba no momento do clique do usuário para evitar bloqueio de popup pelo navegador
+    const novaAba = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
+
     try {
       const res = await fetch('/api/sso/token', {
         method: 'POST',
@@ -102,18 +106,26 @@ export default function HubPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (novaAba) novaAba.close();
         alert(data.error || 'Erro ao gerar acesso SSO.');
         setLaunchingSystem(null);
         return;
       }
 
       if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
+        if (novaAba) {
+          novaAba.location.href = data.redirectUrl;
+        } else {
+          window.open(data.redirectUrl, '_blank', 'noopener,noreferrer');
+        }
+        setLaunchingSystem(null);
       } else {
+        if (novaAba) novaAba.close();
         alert('URL de redirecionamento não informada.');
         setLaunchingSystem(null);
       }
     } catch (err: any) {
+      if (novaAba) novaAba.close();
       alert(err.message || 'Erro ao comunicar com o servidor.');
       setLaunchingSystem(null);
     }
@@ -341,8 +353,7 @@ export default function HubPage() {
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Porta 3000 • Prisma 5 / Next.js 14</span>
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
                 {hasAccessSgc ? (
                   <button
                     type="button"
@@ -404,8 +415,7 @@ export default function HubPage() {
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Porta 3005 • Prisma 5 / Next.js 14</span>
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
                 {hasAccessClima ? (
                   <button
                     type="button"
@@ -462,8 +472,7 @@ export default function HubPage() {
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Porta 3003 • Prisma 5 / Next.js 14</span>
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
                 {hasAccessManut ? (
                   <button
                     type="button"
@@ -520,8 +529,7 @@ export default function HubPage() {
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Porta 3002 • Prisma 6 / Next.js 16</span>
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
                 {hasAccessPca ? (
                   <button
                     type="button"
@@ -578,8 +586,7 @@ export default function HubPage() {
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Porta 3004 • Prisma 6 / Next.js 16</span>
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
                 {hasAccessDiarias ? (
                   <button
                     type="button"
