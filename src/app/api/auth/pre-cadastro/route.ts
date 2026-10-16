@@ -77,9 +77,12 @@ export async function POST(request: NextRequest) {
       if (sgcMatches.length > 0) {
         const sgcUser = sgcMatches[0];
         const r = (sgcUser.role || '').toUpperCase();
-        if (r === 'FISCAL_ADMINISTRATIVO') perfilSgcHerdado = 'FISCAL_ADM';
-        else if (['ADMIN_PROAD', 'GESTOR', 'GESTOR_ATA', 'FISCAL_TECNICO', 'FISCAL_SETORIAL', 'SUPLENTE', 'FORNECEDOR'].includes(r)) {
-          perfilSgcHerdado = r;
+        if (r === 'ADMIN_PROAD') {
+          perfilSgcHerdado = 'ADMIN_PROAD';
+        } else if (r === 'FORNECEDOR') {
+          perfilSgcHerdado = 'FORNECEDOR';
+        } else {
+          perfilSgcHerdado = 'USUARIO';
         }
         await prisma.$executeRawUnsafe(
           `UPDATE "public"."usuarios" SET nome = $1, matricula = $2 WHERE id = $3`,

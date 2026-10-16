@@ -229,7 +229,7 @@ export default function AdminPage() {
     setMotivoDevolucao(u.motivoDevolucao || '');
 
     if (u.tipoUsuario === 'SERVIDOR_UERN') {
-      setHomologarSgc(u.perfilSgc || 'FISCAL_TECNICO');
+      setHomologarSgc(u.perfilSgc || 'USUARIO');
       setHomologarManut(u.perfilManut || 'GESTOR_UNIDADE');
       setHomologarPca(u.perfilPca || 'UNIDADE');
       setHomologarDiarias(u.perfilDiarias || 'DEMANDANTE');
@@ -1270,12 +1270,7 @@ export default function AdminPage() {
                   <option value="">Sem Acesso ao SGC</option>
                   {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' ? (
                     <>
-                      <option value="FISCAL_TECNICO">Fiscal Técnico do Contrato</option>
-                      <option value="FISCAL_ADM">Fiscal Administrativo do Contrato</option>
-                      <option value="FISCAL_SETORIAL">Fiscal Setorial da Unidade</option>
-                      <option value="SUPLENTE">Suplente de Fiscalização</option>
-                      <option value="GESTOR">Gestor de Contratos</option>
-                      <option value="GESTOR_ATA">Gestor de Ata de Registro de Preços</option>
+                      <option value="USUARIO">Usuário / Gestor / Fiscal (Definido por Contrato no SGC)</option>
                       <option value="ADMIN_PROAD">Administrador Geral PROAD</option>
                     </>
                   ) : (
@@ -1788,15 +1783,10 @@ export default function AdminPage() {
                       onChange={(e) => setUsuarioForm({ ...usuarioForm, perfilSgc: e.target.value })}
                       className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white outline-none"
                     >
-                      <option value="">Nenhum</option>
-                      <option value="ADMIN_PROAD">ADMIN_PROAD</option>
-                      <option value="GESTOR">GESTOR</option>
-                      <option value="GESTOR_ATA">GESTOR_ATA</option>
-                      <option value="FISCAL_ADM">FISCAL_ADM</option>
-                      <option value="FISCAL_TECNICO">FISCAL_TECNICO</option>
-                      <option value="FISCAL_SETORIAL">FISCAL_SETORIAL</option>
-                      <option value="SUPLENTE">SUPLENTE</option>
-                      <option value="FORNECEDOR">FORNECEDOR</option>
+                      <option value="">Nenhum (Sem Acesso)</option>
+                      <option value="USUARIO">USUARIO (Gestor / Fiscal por Contrato)</option>
+                      <option value="ADMIN_PROAD">ADMIN_PROAD (Administrador Geral)</option>
+                      <option value="FORNECEDOR">FORNECEDOR (Contratada)</option>
                     </select>
                   </div>
 
