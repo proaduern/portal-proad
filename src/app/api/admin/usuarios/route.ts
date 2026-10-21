@@ -48,34 +48,44 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const usuarios = await prisma.usuarioCentral.findMany({
-      where,
-      include: {
-        unidade: {
-          select: {
-            id: true,
-            sigla: true,
-            nome: true,
-            campus: true,
+    const [usuarios, total, pendentes, devolvidos, ativos, bloqueados, servidores, fornecedores] =
+      await Promise.all([
+        prisma.usuarioCentral.findMany({
+          where,
+          include: {
+            unidade: {
+              select: {
+                id: true,
+                sigla: true,
+                nome: true,
+                campus: true,
+              },
+            },
           },
-        },
-      },
-      orderBy: [
-        { status: 'asc' }, // PENDENTE_APROVACAO vem primeiro
-        { criadoEm: 'desc' },
-      ],
-    });
+          orderBy: [
+            { status: 'asc' }, // PENDENTE_APROVACAO vem primeiro
+            { criadoEm: 'desc' },
+          ],
+        }),
+        prisma.usuarioCentral.count(),
+        prisma.usuarioCentral.count({
+          where: { status: { in: ['PENDENTE_APROVACAO', 'DEVOLVIDO_CORRECAO'] } },
+        }),
+        prisma.usuarioCentral.count({ where: { status: 'DEVOLVIDO_CORRECAO' } }),
+        prisma.usuarioCentral.count({ where: { status: 'ATIVO' } }),
+        prisma.usuarioCentral.count({ where: { status: 'BLOQUEADO' } }),
+        prisma.usuarioCentral.count({ where: { tipoUsuario: 'SERVIDOR_UERN' } }),
+        prisma.usuarioCentral.count({ where: { tipoUsuario: 'FORNECEDOR_EXTERNO' } }),
+      ]);
 
     const contadores = {
-      total: await prisma.usuarioCentral.count(),
-      pendentes: await prisma.usuarioCentral.count({
-        where: { status: { in: ['PENDENTE_APROVACAO', 'DEVOLVIDO_CORRECAO'] } },
-      }),
-      devolvidos: await prisma.usuarioCentral.count({ where: { status: 'DEVOLVIDO_CORRECAO' } }),
-      ativos: await prisma.usuarioCentral.count({ where: { status: 'ATIVO' } }),
-      bloqueados: await prisma.usuarioCentral.count({ where: { status: 'BLOQUEADO' } }),
-      servidores: await prisma.usuarioCentral.count({ where: { tipoUsuario: 'SERVIDOR_UERN' } }),
-      fornecedores: await prisma.usuarioCentral.count({ where: { tipoUsuario: 'FORNECEDOR_EXTERNO' } }),
+      total,
+      pendentes,
+      devolvidos,
+      ativos,
+      bloqueados,
+      servidores,
+      fornecedores,
     };
 
     return NextResponse.json({ usuarios, contadores });
