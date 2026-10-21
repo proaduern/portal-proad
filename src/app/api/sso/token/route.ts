@@ -129,7 +129,10 @@ export async function POST(request: NextRequest) {
       roleForSystem =
         (userDb as any).perfilClimatizacao ||
         (isAdminGeral ? 'ADMIN' : null);
-      systemBaseUrl = process.env.CLIMATIZACAO_URL || 'http://localhost:3005';
+      const rawClimaUrl = process.env.CLIMATIZACAO_URL || 'http://localhost:3005';
+      systemBaseUrl = rawClimaUrl.includes('climatizacao.vercel.app')
+        ? 'https://climatizacao-proaduern.vercel.app'
+        : rawClimaUrl;
     }
 
     if (!roleForSystem) {
