@@ -1308,12 +1308,12 @@ export default function AdminPage() {
                 </select>
               </div>
 
-              {/* 3. PCA (apenas servidores) */}
+              {/* 3. PCA e Subsistemas Pré-Contratuais (apenas servidores) */}
               {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' && (
                 <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
-                      <ShoppingBag className="w-3.5 h-3.5" /> PCA - Plano de Contratações Anual
+                      <ShoppingBag className="w-3.5 h-3.5" /> PCA &amp; Subsistemas Pré-Contratuais (01 a 05)
                     </span>
                   </div>
                   <select
@@ -1321,12 +1321,19 @@ export default function AdminPage() {
                     onChange={(e) => setHomologarPca(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-purple-500"
                   >
-                    <option value="">Sem Acesso ao PCA</option>
-                    <option value="UNIDADE">Usuário de Unidade (Cria e Envia DFDs da Unidade)</option>
-                    <option value="ADMIN">Administrador Geral do PCA (PROAD)</option>
+                    <option value="">Sem Acesso aos Subsistemas Pré-Contratuais</option>
+                    <option value="UNIDADE">UNIDADE (Unidade Demandante — Diretor / Servidor PCA)</option>
+                    <option value="SETOR_INTERNO">SETOR_INTERNO (Subsetor Interno da Unidade — PCA)</option>
+                    <option value="SETOR_TECNICO">SETOR_TECNICO (Setor Técnico — Subsistema ETP e Mapa de Riscos)</option>
+                    <option value="PESQUISA_PRECOS">PESQUISA_PRECOS (Setor de Pesquisa de Preços — Subsistema Pesquisa de Preços)</option>
+                    <option value="PLANEJAMENTO">PLANEJAMENTO (Setor de Planejamento — Subsistema Termo de Referência)</option>
+                    <option value="AGENTE_CONTRATACAO">AGENTE_CONTRATACAO (Agente de Contratação — Subsistema Minutas e Licitações)</option>
+                    <option value="LICITACOES">LICITACOES (Setor de Licitações / Contratos — Subsistema Minutas e Licitações)</option>
+                    <option value="GESTOR_ATA">GESTOR_ATA (Setor de Gestão de Atas — Subsistema Minutas de Ata / ARP)</option>
+                    <option value="ADMIN">ADMIN (Administrador Geral PROAD — Todos os Subsistemas)</option>
                   </select>
 
-                  {homologarPca === 'UNIDADE' && (
+                  {(homologarPca === 'UNIDADE' || homologarPca === 'SETOR_INTERNO') && (
                     <div className="mt-2 pt-2 border-t border-white/5 flex gap-4 text-[11px] text-slate-300">
                       <label className="flex items-center gap-1.5 cursor-pointer">
                         <input
@@ -1808,16 +1815,25 @@ export default function AdminPage() {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] text-slate-300 mb-1">Perfil PCA</label>
+                  <div className="sm:col-span-3">
+                    <label className="block text-[11px] text-slate-300 mb-1">
+                      Perfil PCA &amp; Subsistemas Pré-Contratuais (01 a 05)
+                    </label>
                     <select
                       value={usuarioForm.perfilPca}
                       onChange={(e) => setUsuarioForm({ ...usuarioForm, perfilPca: e.target.value })}
                       className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white outline-none"
                     >
-                      <option value="">Nenhum</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="UNIDADE">UNIDADE</option>
+                      <option value="">Nenhum (Sem Acesso)</option>
+                      <option value="UNIDADE">UNIDADE (Unidade Demandante — Diretor / Servidor PCA)</option>
+                      <option value="SETOR_INTERNO">SETOR_INTERNO (Subsetor Interno da Unidade — PCA)</option>
+                      <option value="SETOR_TECNICO">SETOR_TECNICO (Setor Técnico — Subsistema ETP e Mapa de Riscos)</option>
+                      <option value="PESQUISA_PRECOS">PESQUISA_PRECOS (Setor de Pesquisa de Preços — Subsistema Pesquisa de Preços)</option>
+                      <option value="PLANEJAMENTO">PLANEJAMENTO (Setor de Planejamento — Subsistema Termo de Referência)</option>
+                      <option value="AGENTE_CONTRATACAO">AGENTE_CONTRATACAO (Agente de Contratação — Subsistema Minutas e Licitações)</option>
+                      <option value="LICITACOES">LICITACOES (Setor de Licitações / Contratos — Subsistema Minutas e Licitações)</option>
+                      <option value="GESTOR_ATA">GESTOR_ATA (Setor de Gestão de Atas — Subsistema Minutas de Ata / ARP)</option>
+                      <option value="ADMIN">ADMIN (Administrador Geral PROAD — Todos os Subsistemas)</option>
                     </select>
                   </div>
 

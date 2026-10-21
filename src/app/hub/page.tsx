@@ -17,8 +17,66 @@ import {
   GraduationCap,
   ShieldCheck,
   AlertTriangle,
+  ClipboardCheck,
+  DollarSign,
+  BookOpen,
+  Scale,
 } from 'lucide-react';
 import Link from 'next/link';
+
+type TargetSystemHub =
+  | 'SGC'
+  | 'MANUTENCAO'
+  | 'PCA'
+  | 'ETP_RISCOS'
+  | 'PESQUISA_PRECOS'
+  | 'TERMO_REFERENCIA'
+  | 'LICITACOES_MINUTAS'
+  | 'DIARIAS'
+  | 'CLIMATIZACAO';
+
+function hasSubsistemaAccess(
+  perfilPca: string | null | undefined,
+  isAdminGeral: boolean,
+  target: string
+): string | null {
+  if (isAdminGeral || perfilPca?.toUpperCase().includes('ADMIN')) {
+    return 'ADMIN';
+  }
+  const roles = (perfilPca || '')
+    .toUpperCase()
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (roles.length === 0) return null;
+
+  if (target === 'PCA') {
+    const match = roles.find((r) =>
+      ['UNIDADE', 'DEMANDANTE', 'DIRETOR_UNIDADE', 'SETOR_INTERNO', 'SERVIDOR_UNIDADE', 'PCA'].includes(r)
+    );
+    if (match) return match;
+  } else if (target === 'ETP_RISCOS') {
+    if (roles.some((r) => ['SETOR_TECNICO', 'ETP', 'ETP_RISCOS'].includes(r))) {
+      return 'SETOR_TECNICO';
+    }
+  } else if (target === 'PESQUISA_PRECOS') {
+    if (roles.some((r) => ['PESQUISA_PRECOS', 'PESQUISA'].includes(r))) {
+      return 'PESQUISA_PRECOS';
+    }
+  } else if (target === 'TERMO_REFERENCIA') {
+    if (roles.some((r) => ['PLANEJAMENTO', 'TERMO_REFERENCIA', 'TR'].includes(r))) {
+      return 'PLANEJAMENTO';
+    }
+  } else if (target === 'LICITACOES_MINUTAS') {
+    const match = roles.find((r) =>
+      ['LICITACOES', 'AGENTE_CONTRATACAO', 'GESTOR_ATA', 'CONTRATOS', 'MINUTAS'].includes(r)
+    );
+    if (match) return match;
+  }
+
+  return null;
+}
 
 interface UserData {
   id: string;
@@ -87,7 +145,7 @@ export default function HubPage() {
   };
 
   const handleLaunchSystem = async (
-    targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO',
+    targetSystem: TargetSystemHub,
     forcarTreinamento?: boolean
   ) => {
     const isTreino = forcarTreinamento !== undefined ? forcarTreinamento : modoAmbiente === 'TREINAMENTO';
@@ -142,18 +200,34 @@ export default function HubPage() {
     );
   }
 
-  // Permissões ativas por sistema
-  const hasAccessSgc = Boolean(user?.perfilSgc || user?.isAdminGeral);
-  const hasAccessPca = Boolean(user?.perfilPca || user?.isAdminGeral);
-  const hasAccessManut = Boolean(user?.perfilManut || user?.isAdminGeral);
-  const hasAccessDiarias = Boolean(user?.perfilDiarias || user?.isAdminGeral);
-  const hasAccessClima = Boolean(user?.perfilClimatizacao || user?.isAdminGeral);
+  const isAdmin = Boolean(user?.isAdminGeral);
+
+  // Permissões ativas por subsistema
+  const rolePca = hasSubsistemaAccess(user?.perfilPca, isAdmin, 'PCA');
+  const roleEtpRiscos = hasSubsistemaAccess(user?.perfilPca, isAdmin, 'ETP_RISCOS');
+  const rolePesquisaPrecos = hasSubsistemaAccess(user?.perfilPca, isAdmin, 'PESQUISA_PRECOS');
+  const roleTermoReferencia = hasSubsistemaAccess(user?.perfilPca, isAdmin, 'TERMO_REFERENCIA');
+  const roleLicitacoesMinutas = hasSubsistemaAccess(user?.perfilPca, isAdmin, 'LICITACOES_MINUTAS');
+
+  const hasAccessPca = Boolean(rolePca);
+  const hasAccessEtpRiscos = Boolean(roleEtpRiscos);
+  const hasAccessPesquisaPrecos = Boolean(rolePesquisaPrecos);
+  const hasAccessTermoReferencia = Boolean(roleTermoReferencia);
+  const hasAccessLicitacoesMinutas = Boolean(roleLicitacoesMinutas);
+  const hasAccessSgc = Boolean(user?.perfilSgc || isAdmin);
+  const hasAccessManut = Boolean(user?.perfilManut || isAdmin);
+  const hasAccessDiarias = Boolean(user?.perfilDiarias || isAdmin);
+  const hasAccessClima = Boolean(user?.perfilClimatizacao || isAdmin);
 
   const totalSistemasAcessiveis = [
+    hasAccessPca,
+    hasAccessEtpRiscos,
+    hasAccessPesquisaPrecos,
+    hasAccessTermoReferencia,
+    hasAccessLicitacoesMinutas,
     hasAccessSgc,
     hasAccessClima,
     hasAccessManut,
-    hasAccessPca,
     hasAccessDiarias,
   ].filter(Boolean).length;
 
@@ -346,7 +420,257 @@ export default function HubPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 1. SGC - Gestão de Contratos e Terceirização */}
+              {/* Subsistema 01: PCA - Plano de Contratações Anual */}
+              {hasAccessPca && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-purple-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                        <ShoppingBag className="w-6 h-6" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-md">
+                          Subsistema 01 • Coleta &amp; PNCP
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[11px] font-semibold">
+                          Perfil Real: {rolePca}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white group-hover:text-purple-400 transition">
+                      PCA - Plano de Contratações Anual
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Abertura de DFDs pelas Unidades Demandantes, distribuição de cotas internas, consolidação e publicação do PCA no PNCP, com acompanhamento item por item.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystem('PCA')}
+                      disabled={launchingSystem === 'PCA'}
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modoAmbiente === 'TREINAMENTO'
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
+                          : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-400 hover:to-indigo-500'
+                      }`}
+                    >
+                      <span>
+                        {launchingSystem === 'PCA'
+                          ? 'Iniciando...'
+                          : modoAmbiente === 'TREINAMENTO'
+                          ? '🎓 Treinar no PCA'
+                          : 'Entrar no PCA'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Subsistema 02: ETP e Mapa de Riscos */}
+              {hasAccessEtpRiscos && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-indigo-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                        <ClipboardCheck className="w-6 h-6" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md">
+                          Subsistema 02 • Setores Técnicos
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-[11px] font-semibold">
+                          Perfil Real: {roleEtpRiscos}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white group-hover:text-indigo-400 transition">
+                      ETP e Mapa de Riscos
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Consolidação técnica final da lista de itens por competência (STI, Patrimônio, SOBE, DAS, Almoxarifado, Transportes e Comitês) e elaboração do ETP e Mapa de Riscos.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystem('ETP_RISCOS')}
+                      disabled={launchingSystem === 'ETP_RISCOS'}
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modoAmbiente === 'TREINAMENTO'
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
+                          : 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white hover:from-indigo-400 hover:to-blue-500'
+                      }`}
+                    >
+                      <span>
+                        {launchingSystem === 'ETP_RISCOS'
+                          ? 'Iniciando...'
+                          : modoAmbiente === 'TREINAMENTO'
+                          ? '🎓 Treinar em ETP e Riscos'
+                          : 'Entrar em ETP e Riscos'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Subsistema 03: Pesquisa de Preços */}
+              {hasAccessPesquisaPrecos && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-teal-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-teal-600/20 border border-teal-500/30 flex items-center justify-center text-teal-400">
+                        <DollarSign className="w-6 h-6" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-bold bg-teal-500/15 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded-md">
+                          Subsistema 03 • Cotação Referencial
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-[11px] font-semibold">
+                          Perfil Real: {rolePesquisaPrecos}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white group-hover:text-teal-400 transition">
+                      Pesquisa de Preços
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Recebimento automático da lista de itens consolidada no ETP e lançamento dos preços referenciais obtidos na pesquisa de mercado.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystem('PESQUISA_PRECOS')}
+                      disabled={launchingSystem === 'PESQUISA_PRECOS'}
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modoAmbiente === 'TREINAMENTO'
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
+                          : 'bg-gradient-to-r from-teal-500 to-emerald-600 text-slate-950 hover:from-teal-400 hover:to-emerald-500'
+                      }`}
+                    >
+                      <span>
+                        {launchingSystem === 'PESQUISA_PRECOS'
+                          ? 'Iniciando...'
+                          : modoAmbiente === 'TREINAMENTO'
+                          ? '🎓 Treinar em Pesquisa de Preços'
+                          : 'Entrar em Pesquisa de Preços'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Subsistema 04: Termo de Referência (TR) */}
+              {hasAccessTermoReferencia && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-orange-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-orange-600/20 border border-orange-500/30 flex items-center justify-center text-orange-400">
+                        <BookOpen className="w-6 h-6" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-bold bg-orange-500/15 text-orange-300 border border-orange-500/30 px-2 py-0.5 rounded-md">
+                          Subsistema 04 • Planejamento
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-300 text-[11px] font-semibold">
+                          Perfil Real: {roleTermoReferencia}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white group-hover:text-orange-400 transition">
+                      Termo de Referência (TR)
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Elaboração do Termo de Referência com herança automática dos dados técnicos do ETP e dos preços referenciais da Pesquisa de Preços.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystem('TERMO_REFERENCIA')}
+                      disabled={launchingSystem === 'TERMO_REFERENCIA'}
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modoAmbiente === 'TREINAMENTO'
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
+                          : 'bg-gradient-to-r from-orange-500 to-amber-600 text-slate-950 hover:from-orange-400 hover:to-amber-500'
+                      }`}
+                    >
+                      <span>
+                        {launchingSystem === 'TERMO_REFERENCIA'
+                          ? 'Iniciando...'
+                          : modoAmbiente === 'TREINAMENTO'
+                          ? '🎓 Treinar em Termo de Referência'
+                          : 'Entrar em Termo de Referência'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Subsistema 05: Minutas, Fase Jurídica e Licitações */}
+              {hasAccessLicitacoesMinutas && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-rose-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                        <Scale className="w-6 h-6" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-md">
+                          Subsistema 05 • Edital, PGE &amp; Certame
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[11px] font-semibold">
+                          Perfil Real: {roleLicitacoesMinutas}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white group-hover:text-rose-400 transition">
+                      Minutas, Fase Jurídica e Licitações
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Elaboração de Minutas de Edital, Contrato e Ata (ARP), registro da análise jurídica (AJUR/PGE) e diligências, Edital Definitivo, publicação no PNCP e Homologação pelo Preço Real Licitado.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchSystem('LICITACOES_MINUTAS')}
+                      disabled={launchingSystem === 'LICITACOES_MINUTAS'}
+                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+                        modoAmbiente === 'TREINAMENTO'
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
+                          : 'bg-gradient-to-r from-rose-500 to-pink-600 text-white hover:from-rose-400 hover:to-pink-500'
+                      }`}
+                    >
+                      <span>
+                        {launchingSystem === 'LICITACOES_MINUTAS'
+                          ? 'Iniciando...'
+                          : modoAmbiente === 'TREINAMENTO'
+                          ? '🎓 Treinar em Minutas e Licitações'
+                          : 'Entrar em Minutas e Licitações'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Subsistema 06: SGC - Contratos, Atas, Empenho e Execução */}
               {hasAccessSgc && (
                 <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-amber-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
                   <div>
@@ -354,16 +678,21 @@ export default function HubPage() {
                       <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
                         <FileText className="w-6 h-6" />
                       </div>
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-                        Perfil Real: {user?.perfilSgc || 'ADMIN'}
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-md">
+                          Subsistema 06 • Empenho, Atas &amp; Execução
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold">
+                          Perfil Real: {user?.perfilSgc || 'ADMIN'}
+                        </span>
+                      </div>
                     </div>
 
                     <h4 className="text-lg font-bold text-white group-hover:text-amber-400 transition">
-                      SGC - Contratos e Terceirização
+                      SGC - Contratos, Atas, Empenho e Execução
                     </h4>
                     <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                      Gestão completa de Contratos Administrativos, Atas de Registro de Preços, fiscalização técnica e setorial, terceirização de mão de obra e controle de conta vinculada.
+                      Registro de Empenho, designação de Gestor e Fiscais (Gabinete PROAD), controle UCI, elaboração de Contratos, Atas de Registro de Preços e gestão da execução e recebimento.
                     </p>
                   </div>
 
@@ -391,7 +720,7 @@ export default function HubPage() {
                 </div>
               )}
 
-              {/* 2. SIG-CLIMA - Climatização e Refrigeração */}
+              {/* SIG-CLIMA - Climatização e Refrigeração */}
               {hasAccessClima && (
                 <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-cyan-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
                   <div>
@@ -441,7 +770,7 @@ export default function HubPage() {
                 </div>
               )}
 
-              {/* 3. Manutenção Predial - Ordem de Serviço */}
+              {/* Manutenção Predial - Ordem de Serviço */}
               {hasAccessManut && (
                 <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
                   <div>
@@ -455,7 +784,7 @@ export default function HubPage() {
                     </div>
 
                     <h4 className="text-lg font-bold text-white group-hover:text-emerald-400 transition">
-                      Manutenção Predial & Ordem de Serviço
+                      Manutenção Predial &amp; Ordem de Serviço
                     </h4>
                     <p className="text-xs text-slate-300 mt-2 leading-relaxed">
                       Abertura de chamados, vistorias prediais, execução de Ordens de Serviço (OS) pela SOBE e empresas contratadas em todos os campi da UERN.
@@ -486,52 +815,7 @@ export default function HubPage() {
                 </div>
               )}
 
-              {/* 4. PCA - Plano de Contratações Anual */}
-              {hasAccessPca && (
-                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-purple-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
-                  <div>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
-                        <ShoppingBag className="w-6 h-6" />
-                      </div>
-                      <span className="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-semibold">
-                        Perfil Real: {user?.perfilPca || 'ADMIN'}
-                      </span>
-                    </div>
-
-                    <h4 className="text-lg font-bold text-white group-hover:text-purple-400 transition">
-                      PCA - Plano de Contratações Anual
-                    </h4>
-                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                      Planejamento e consolidação das demandas de aquisição de bens e contratação de serviços por todas as unidades da UERN. Sincronizado automaticamente com contratos vigentes.
-                    </p>
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={() => handleLaunchSystem('PCA')}
-                      disabled={launchingSystem === 'PCA'}
-                      className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 disabled:opacity-50 cursor-pointer ${
-                        modoAmbiente === 'TREINAMENTO'
-                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold hover:brightness-110'
-                          : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-400 hover:to-indigo-500'
-                      }`}
-                    >
-                      <span>
-                        {launchingSystem === 'PCA'
-                          ? 'Iniciando...'
-                          : modoAmbiente === 'TREINAMENTO'
-                          ? '🎓 Treinar no PCA'
-                          : 'Entrar no PCA'}
-                      </span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* 5. Diárias e Passagens */}
+              {/* Diárias e Passagens */}
               {hasAccessDiarias && (
                 <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-cyan-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
                   <div>
