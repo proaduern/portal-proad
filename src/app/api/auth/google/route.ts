@@ -8,7 +8,25 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, nome, googleId, fotoUrl } = body;
+    let { email, nome, googleId, fotoUrl, credential } = body;
+
+    // Se veio um token JWT real do Google Identity Services (One Tap / Botão Oficial Google)
+    if (credential && typeof credential === 'string') {
+      const tokenInfoRes = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
+      );
+      if (!tokenInfoRes.ok) {
+        return NextResponse.json(
+          { error: 'Token do Google inválido ou expirado.' },
+          { status: 401 }
+        );
+      }
+      const tokenPayload = await tokenInfoRes.json();
+      email = tokenPayload.email;
+      nome = tokenPayload.name || nome;
+      googleId = tokenPayload.sub || googleId;
+      fotoUrl = tokenPayload.picture || fotoUrl;
+    }
 
     if (!email) {
       return NextResponse.json({ error: 'E-mail não informado.' }, { status: 400 });
@@ -101,6 +119,9 @@ export async function POST(request: NextRequest) {
     if (usuarioExistente.status === 'PENDENTE_APROVACAO') {
       return NextResponse.json({
         status: 'PENDENTE_APROVACAO',
+        email: usuarioExistente.email,
+        nome: usuarioExistente.nome,
+        fotoUrl: usuarioExistente.fotoUrl || fotoUrl,
         mensagem: 'Seu cadastro está aguardando homologação do Administrador da PROAD.',
         redirect: '/quarentena',
       });
@@ -109,6 +130,9 @@ export async function POST(request: NextRequest) {
     // 7. Usuário ativo liberado
     return NextResponse.json({
       status: 'ATIVO',
+      email: usuarioExistente.email,
+      nome: usuarioExistente.nome,
+      fotoUrl: usuarioExistente.fotoUrl || fotoUrl,
       mensagem: 'Login realizado com sucesso!',
       redirect: '/hub',
     });
