@@ -19,6 +19,7 @@ export interface SessionPayload {
   unidadeId?: string | null;
   unidadeSigla?: string | null;
   unidadeNome?: string | null;
+  unidadeCampus?: string | null;
   cnpjEmpresa?: string | null;
   razaoSocial?: string | null;
   fotoUrl?: string | null;

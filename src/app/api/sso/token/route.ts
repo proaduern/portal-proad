@@ -165,6 +165,7 @@ export async function POST(request: NextRequest) {
         unidadeSigla: userDb.unidade?.sigla,
         unidadeNome: userDb.unidade?.nome,
         unidadeEmail: userDb.unidade?.email,
+        unidadeCampus: userDb.unidade?.campus,
         cnpjEmpresa: userDb.cnpjEmpresa,
         razaoSocial: userDb.razaoSocial,
         perfilSgc: userDb.perfilSgc,
