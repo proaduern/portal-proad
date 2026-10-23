@@ -171,7 +171,10 @@ export default function HubPage() {
       }
 
       if (data.redirectUrl) {
-        if (novaAba) {
+        if (novaAba && !novaAba.closed) {
+          try {
+            novaAba.opener = null;
+          } catch (e) {}
           novaAba.location.href = data.redirectUrl;
         } else {
           window.open(data.redirectUrl, '_blank', 'noopener,noreferrer');
