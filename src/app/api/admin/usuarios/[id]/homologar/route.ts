@@ -260,6 +260,25 @@ export async function POST(
       },
     });
 
+    // Sincroniza imediatamente o perfil com o Sistema PCA (para Agente de Contratação, Planejamento, Pesquisa de Preços, Licitações)
+    if (usuarioAprovado.perfilPca) {
+      const pcaUrl = process.env.PCA_SYSTEM_URL || 'https://pca-uern.vercel.app';
+      fetch(`${pcaUrl}/api/integracao/sincronizar-perfil`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-proad-secret': process.env.PROAD_SSO_SECRET || 'uern_portal_proad_sso_master_key_2026_super_seguro',
+        },
+        body: JSON.stringify({
+          email: usuarioAprovado.email,
+          nome: usuarioAprovado.nome,
+          matricula: usuarioAprovado.matricula,
+          perfilPca: usuarioAprovado.perfilPca,
+          ativo: true,
+        }),
+      }).catch(() => {});
+    }
+
     return NextResponse.json({
       success: true,
       message: `Cadastro de ${usuarioAprovado.nome} homologado com sucesso!`,
