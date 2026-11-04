@@ -1327,7 +1327,8 @@ export default function AdminPage() {
                     <option value="SETOR_TECNICO">SETOR_TECNICO (Setor Técnico — Subsistema ETP e Mapa de Riscos)</option>
                     <option value="PESQUISA_PRECOS">PESQUISA_PRECOS (Setor de Pesquisa de Preços — Subsistema Pesquisa de Preços)</option>
                     <option value="PLANEJAMENTO">PLANEJAMENTO (Setor de Planejamento — Subsistema Termo de Referência)</option>
-                    <option value="AGENTE_CONTRATACAO">AGENTE_CONTRATACAO (Agente de Contratação — Subsistema Minutas e Licitações)</option>
+                    <option value="DIRETOR_LICITACOES">DIRETOR_LICITACOES (Diretor de Licitações / DLC — Gestão Pós-ETP até a Licitação)</option>
+                    <option value="AGENTE_CONTRATACAO">AGENTE_CONTRATACAO (Agente de Contratação — Análise Preliminar, Dotação, Edital e Homologação)</option>
                     <option value="LICITACOES">LICITACOES (Setor de Licitações / Contratos — Subsistema Minutas e Licitações)</option>
                     <option value="GESTOR_ATA">GESTOR_ATA (Setor de Gestão de Atas — Subsistema Minutas de Ata / ARP)</option>
                     <option value="ADMIN">ADMIN (Administrador Geral PROAD — Todos os Subsistemas)</option>
@@ -1830,7 +1831,8 @@ export default function AdminPage() {
                       <option value="SETOR_TECNICO">SETOR_TECNICO (Setor Técnico — Subsistema ETP e Mapa de Riscos)</option>
                       <option value="PESQUISA_PRECOS">PESQUISA_PRECOS (Setor de Pesquisa de Preços — Subsistema Pesquisa de Preços)</option>
                       <option value="PLANEJAMENTO">PLANEJAMENTO (Setor de Planejamento — Subsistema Termo de Referência)</option>
-                      <option value="AGENTE_CONTRATACAO">AGENTE_CONTRATACAO (Agente de Contratação — Subsistema Minutas e Licitações)</option>
+                      <option value="DIRETOR_LICITACOES">DIRETOR_LICITACOES (Diretor de Licitações / DLC — Gestão Pós-ETP até a Licitação)</option>
+                      <option value="AGENTE_CONTRATACAO">AGENTE_CONTRATACAO (Agente de Contratação — Análise Preliminar, Dotação, Edital e Homologação)</option>
                       <option value="LICITACOES">LICITACOES (Setor de Licitações / Contratos — Subsistema Minutas e Licitações)</option>
                       <option value="GESTOR_ATA">GESTOR_ATA (Setor de Gestão de Atas — Subsistema Minutas de Ata / ARP)</option>
                       <option value="ADMIN">ADMIN (Administrador Geral PROAD — Todos os Subsistemas)</option>

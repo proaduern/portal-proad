@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const usuarios = await prisma.usuarioCentral.findMany({
       where: {
         perfilPca: {
-          in: ["AGENTE_CONTRATACAO", "PLANEJAMENTO", "PESQUISA_PRECOS", "LICITACOES"],
+          in: ["AGENTE_CONTRATACAO", "PLANEJAMENTO", "PESQUISA_PRECOS", "LICITACOES", "DIRETOR_LICITACOES"],
         },
       },
       select: {

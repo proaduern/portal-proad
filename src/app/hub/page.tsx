@@ -64,13 +64,19 @@ function hasSubsistemaAccess(
     if (roles.some((r) => ['PESQUISA_PRECOS', 'PESQUISA'].includes(r))) {
       return 'PESQUISA_PRECOS';
     }
+    if (roles.some((r) => ['DIRETOR_LICITACOES', 'DIRETOR_DLC', 'LICITACOES'].includes(r))) {
+      return 'DIRETOR_LICITACOES';
+    }
   } else if (target === 'TERMO_REFERENCIA') {
     if (roles.some((r) => ['PLANEJAMENTO', 'TERMO_REFERENCIA', 'TR'].includes(r))) {
       return 'PLANEJAMENTO';
     }
+    if (roles.some((r) => ['DIRETOR_LICITACOES', 'DIRETOR_DLC', 'LICITACOES'].includes(r))) {
+      return 'DIRETOR_LICITACOES';
+    }
   } else if (target === 'LICITACOES_MINUTAS') {
     const match = roles.find((r) =>
-      ['LICITACOES', 'AGENTE_CONTRATACAO', 'GESTOR_ATA', 'CONTRATOS', 'MINUTAS'].includes(r)
+      ['DIRETOR_LICITACOES', 'DIRETOR_DLC', 'LICITACOES', 'AGENTE_CONTRATACAO', 'GESTOR_ATA', 'CONTRATOS', 'MINUTAS'].includes(r)
     );
     if (match) return match;
   }
