@@ -23,6 +23,7 @@ import {
   Scale,
 } from 'lucide-react';
 import Link from 'next/link';
+import BarraImpersonacaoAdmin from '@/components/BarraImpersonacaoAdmin';
 
 type TargetSystemHub =
   | 'SGC'
@@ -108,6 +109,7 @@ interface UserData {
 export default function HubPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
+  const [realUser, setRealUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [launchingSystem, setLaunchingSystem] = useState<string | null>(null);
   const [modoAmbiente, setModoAmbiente] = useState<'PRODUCAO' | 'TREINAMENTO'>('PRODUCAO');
@@ -132,6 +134,7 @@ export default function HubPage() {
         }
 
         setUser(data.user);
+        if (data.realUser) setRealUser(data.realUser);
       } catch (err) {
         console.error(err);
         router.push('/');
@@ -242,6 +245,7 @@ export default function HubPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
+      <BarraImpersonacaoAdmin sessaoReal={realUser} sessaoAtual={user} />
       {/* Top Header / Navbar */}
       <header className="border-b border-white/10 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 px-6 py-3.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">

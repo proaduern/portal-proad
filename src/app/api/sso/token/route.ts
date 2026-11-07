@@ -99,11 +99,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Sistema de destino inválido.' }, { status: 400 });
     }
 
-    // Busca usuário atualizado
-    const userDb = await prisma.usuarioCentral.findUnique({
-      where: { id: session.id },
-      include: { unidade: true },
-    });
+    // Busca usuário atualizado ou utiliza perfil de simulação
+    let userDb = session.id.startsWith('sim_')
+      ? null
+      : await prisma.usuarioCentral.findUnique({
+          where: { id: session.id },
+          include: { unidade: true },
+        });
+
+    if (!userDb && session.id.startsWith('sim_')) {
+      userDb = {
+        id: session.id,
+        nome: session.nome,
+        email: session.email,
+        cpf: session.cpf,
+        tipoUsuario: session.tipoUsuario,
+        status: 'ATIVO',
+        matricula: session.matricula || null,
+        unidadeId: session.unidadeId || null,
+        unidade: session.unidadeSigla
+          ? ({ sigla: session.unidadeSigla, nome: session.unidadeNome, campus: session.unidadeCampus } as any)
+          : null,
+        cnpjEmpresa: session.cnpjEmpresa || null,
+        razaoSocial: session.razaoSocial || null,
+        perfilSgc: session.perfilSgc || null,
+        perfilManut: session.perfilManut || null,
+        perfilPca: session.perfilPca || null,
+        permissoesPca: session.permissoesPca || null,
+        perfilDiarias: session.perfilDiarias || null,
+        perfilClimatizacao: session.perfilClimatizacao || null,
+      } as any;
+    }
 
     if (!userDb || userDb.status !== 'ATIVO') {
       return NextResponse.json({ error: 'Usuário não habilitado para acesso.' }, { status: 403 });
