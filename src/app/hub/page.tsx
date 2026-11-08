@@ -21,6 +21,9 @@ import {
   DollarSign,
   BookOpen,
   Scale,
+  Award,
+  TrendingUp,
+  BarChart3,
 } from 'lucide-react';
 import Link from 'next/link';
 import BarraImpersonacaoAdmin from '@/components/BarraImpersonacaoAdmin';
