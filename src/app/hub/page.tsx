@@ -413,6 +413,81 @@ export default function HubPage() {
           </div>
         </div>
 
+        {/* Painel Executivo de Governança & KPIs (Exclusivo Administradores PROAD) */}
+        {user?.isAdminGeral && (
+          <div className="mb-8 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-blue-950/80 border border-blue-500/30 p-6 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-white/10 gap-3">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold uppercase tracking-wider mb-1">
+                  <Award className="w-3.5 h-3.5" /> Governança &amp; Eficiência • Lei 14.133/2021
+                </div>
+                <h3 className="text-lg font-extrabold text-white tracking-tight">
+                  Painel Integrado de Eficiência de Licitações &amp; Gestão Contratual
+                </h3>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Monitoramento em tempo real de gargalos setoriais, ratings de sucesso e índice de qualidade de contratos (IQContrato).
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+              {/* Card 1: Eficiência de Licitações (PCA) */}
+              <div className="rounded-xl bg-slate-950/60 border border-purple-500/30 p-4 flex flex-col justify-between hover:border-purple-400/60 transition group">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      Licitações &amp; Compras (PCA)
+                    </span>
+                    <TrendingUp className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <h4 className="text-sm font-bold text-white group-hover:text-purple-300 transition">
+                    Gargalômetro Setorial &amp; Sucesso dos Certames
+                  </h4>
+                  <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                    Acompanhamento de Lead Times (Demandante, Pesquisa, TR, Minutas e Agente), neutralidade referencial da PGE-RN e taxa de homologação de itens.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400 font-medium">SLA Lei 14.133/21</span>
+                  <a
+                    href="https://pca-uern.vercel.app/admin/kpis-licitacao"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-purple-400 hover:text-purple-300 hover:underline"
+                  >
+                    Acessar Gargalômetro <ChevronRight className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Card 2: Continuidade Contratual & IQContrato (SGC) */}
+              <div className="rounded-xl bg-slate-950/60 border border-amber-500/30 p-4 flex flex-col justify-between hover:border-amber-400/60 transition group">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      Execução &amp; Contratos (SGC)
+                    </span>
+                    <Award className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <h4 className="text-sm font-bold text-white group-hover:text-amber-300 transition">
+                    Radar de Continuidade &amp; IQContrato
+                  </h4>
+                  <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                    Radar preditivo de nova licitação (180-240 dias), queima de saldo (burn rate), prorrogações tempestivas e satisfação dos usuários dos campi.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400 font-medium">Qualidade &amp; Saldo</span>
+                  <a
+                    href="https://sgc-uern.vercel.app/kpis-contratos"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300 hover:underline"
+                  >
+                    Acessar IQContrato <ChevronRight className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Grid dos Sistemas Autorizados */}
         <div>
           <div className="flex items-center justify-between mb-4">
