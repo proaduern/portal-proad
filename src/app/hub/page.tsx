@@ -425,7 +425,7 @@ export default function HubPage() {
                   Painel Integrado de Eficiência de Licitações &amp; Gestão Contratual
                 </h3>
                 <p className="text-xs text-slate-300 mt-0.5">
-                  Monitoramento em tempo real de gargalos setoriais, ratings de sucesso e índice de qualidade de contratos (IQContrato).
+                  Monitoramento em tempo real de controle de desempenho setorial, ratings de sucesso e índice de qualidade de contratos (IQContrato).
                 </p>
               </div>
             </div>
@@ -441,7 +441,7 @@ export default function HubPage() {
                     <TrendingUp className="w-4 h-4 text-purple-400" />
                   </div>
                   <h4 className="text-sm font-bold text-white group-hover:text-purple-300 transition">
-                    Gargalômetro Setorial &amp; Sucesso dos Certames
+                    Controle de Desempenho Setorial &amp; Sucesso dos Certames
                   </h4>
                   <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
                     Acompanhamento de Lead Times (Demandante, Pesquisa, TR, Minutas e Agente), neutralidade referencial da PGE-RN e taxa de homologação de itens.
@@ -453,7 +453,7 @@ export default function HubPage() {
                     href="https://pca-uern.vercel.app/admin/kpis-licitacao"
                     className="inline-flex items-center gap-1 text-xs font-bold text-purple-400 hover:text-purple-300 hover:underline"
                   >
-                    Acessar Gargalômetro <ChevronRight className="w-3.5 h-3.5" />
+                    Acessar Controle de Desempenho <ChevronRight className="w-3.5 h-3.5" />
                   </a>
                 </div>
               </div>
