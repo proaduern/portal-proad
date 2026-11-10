@@ -226,6 +226,27 @@ export async function PUT(
       },
     });
 
+    if (usuarioAtualizado.perfilPca !== undefined) {
+      const pcaUrl = process.env.PCA_SYSTEM_URL || process.env.PCA_URL || 'https://pca-uern.vercel.app';
+      fetch(`${pcaUrl}/api/integracao/sincronizar-perfil`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-proad-secret': process.env.PROAD_SSO_SECRET || 'uern_portal_proad_sso_master_key_2026_super_seguro',
+        },
+        body: JSON.stringify({
+          email: usuarioAtualizado.email,
+          nome: usuarioAtualizado.nome,
+          matricula: usuarioAtualizado.matricula,
+          perfilPca: usuarioAtualizado.perfilPca,
+          unidadeSigla: usuarioAtualizado.unidade?.sigla || null,
+          unidadeNome: usuarioAtualizado.unidade?.nome || null,
+          unidadeEmail: usuarioAtualizado.unidade?.email || null,
+          ativo: usuarioAtualizado.status === 'ATIVO',
+        }),
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ success: true, usuario: usuarioAtualizado });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Erro ao atualizar usuário.' }, { status: 500 });

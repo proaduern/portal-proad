@@ -39,13 +39,13 @@ type TargetSystemHub =
   | 'DIARIAS'
   | 'CLIMATIZACAO';
 
-function hasSubsistemaAccess(
+function getRolesForSubsistema(
   perfilPca: string | null | undefined,
   isAdminGeral: boolean,
   target: string
-): string | null {
+): string[] {
   if (isAdminGeral || perfilPca?.toUpperCase().includes('ADMIN')) {
-    return 'ADMIN';
+    return ['ADMIN'];
   }
   const roles = (perfilPca || '')
     .toUpperCase()
@@ -53,39 +53,42 @@ function hasSubsistemaAccess(
     .map((s) => s.trim())
     .filter(Boolean);
 
-  if (roles.length === 0) return null;
+  if (roles.length === 0) return [];
 
   if (target === 'PCA') {
-    const match = roles.find((r) =>
-      ['UNIDADE', 'DEMANDANTE', 'DIRETOR_UNIDADE', 'SETOR_INTERNO', 'SERVIDOR_UNIDADE', 'PCA'].includes(r)
+    return roles.filter((r) =>
+      ['UNIDADE', 'DEMANDANTE', 'DIRETOR_UNIDADE', 'SETOR_INTERNO', 'SERVIDOR_UNIDADE', 'PCA', 'EXECUCAO', 'ENTREGA'].includes(r)
     );
-    if (match) return match;
   } else if (target === 'ETP_RISCOS') {
-    if (roles.some((r) => ['SETOR_TECNICO', 'ETP', 'ETP_RISCOS'].includes(r))) {
-      return 'SETOR_TECNICO';
-    }
+    return roles.some((r) => ['SETOR_TECNICO', 'ETP', 'ETP_RISCOS'].includes(r))
+      ? ['SETOR_TECNICO']
+      : [];
   } else if (target === 'PESQUISA_PRECOS') {
-    if (roles.some((r) => ['PESQUISA_PRECOS', 'PESQUISA'].includes(r))) {
-      return 'PESQUISA_PRECOS';
-    }
-    if (roles.some((r) => ['DIRETOR_LICITACOES', 'DIRETOR_DLC', 'LICITACOES'].includes(r))) {
-      return 'DIRETOR_LICITACOES';
-    }
+    const out: string[] = [];
+    if (roles.some((r) => ['PESQUISA_PRECOS', 'PESQUISA'].includes(r))) out.push('PESQUISA_PRECOS');
+    if (roles.some((r) => ['DIRETOR_LICITACOES', 'DIRETOR_DLC', 'LICITACOES'].includes(r))) out.push('DIRETOR_LICITACOES');
+    return out;
   } else if (target === 'TERMO_REFERENCIA') {
-    if (roles.some((r) => ['PLANEJAMENTO', 'TERMO_REFERENCIA', 'TR'].includes(r))) {
-      return 'PLANEJAMENTO';
-    }
-    if (roles.some((r) => ['DIRETOR_LICITACOES', 'DIRETOR_DLC', 'LICITACOES'].includes(r))) {
-      return 'DIRETOR_LICITACOES';
-    }
+    const out: string[] = [];
+    if (roles.some((r) => ['PLANEJAMENTO', 'TERMO_REFERENCIA', 'TR'].includes(r))) out.push('PLANEJAMENTO');
+    if (roles.some((r) => ['DIRETOR_LICITACOES', 'DIRETOR_DLC', 'LICITACOES'].includes(r))) out.push('DIRETOR_LICITACOES');
+    return out;
   } else if (target === 'LICITACOES_MINUTAS') {
-    const match = roles.find((r) =>
+    return roles.filter((r) =>
       ['DIRETOR_LICITACOES', 'DIRETOR_DLC', 'LICITACOES', 'AGENTE_CONTRATACAO', 'GESTOR_ATA', 'CONTRATOS', 'MINUTAS'].includes(r)
     );
-    if (match) return match;
   }
 
-  return null;
+  return [];
+}
+
+function hasSubsistemaAccess(
+  perfilPca: string | null | undefined,
+  isAdminGeral: boolean,
+  target: string
+): string | null {
+  const matched = getRolesForSubsistema(perfilPca, isAdminGeral, target);
+  return matched.length > 0 ? matched.join(' + ') : null;
 }
 
 interface UserData {
@@ -158,7 +161,8 @@ export default function HubPage() {
 
   const handleLaunchSystem = async (
     targetSystem: TargetSystemHub,
-    forcarTreinamento?: boolean
+    forcarTreinamento?: boolean,
+    preferredRole?: string
   ) => {
     const isTreino = forcarTreinamento !== undefined ? forcarTreinamento : modoAmbiente === 'TREINAMENTO';
     setLaunchingSystem(targetSystem);
@@ -170,7 +174,7 @@ export default function HubPage() {
       const res = await fetch('/api/sso/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetSystem, isTreinamento: isTreino }),
+        body: JSON.stringify({ targetSystem, isTreinamento: isTreino, preferredRole }),
       });
 
       const data = await res.json();

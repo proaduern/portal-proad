@@ -52,14 +52,14 @@ export async function GET() {
           perfilDiarias: userDb.perfilDiarias,
           perfilClimatizacao:
             (userDb as any).perfilClimatizacao ||
-            (userDb.perfilSgc === 'ADMIN_PROAD' || userDb.perfilManut === 'ADMIN' ? 'ADMIN' : null),
+            (userDb.perfilSgc?.toUpperCase().includes('ADMIN_PROAD') || userDb.perfilManut?.toUpperCase().includes('ADMIN') ? 'ADMIN' : null),
           motivoDevolucao: userDb.motivoDevolucao,
           dataDevolucao: userDb.dataDevolucao,
           isAdminGeral:
-            userDb.perfilSgc === 'ADMIN_PROAD' ||
-            userDb.perfilManut === 'ADMIN' ||
+            Boolean(userDb.perfilSgc?.toUpperCase().includes('ADMIN_PROAD')) ||
+            Boolean(userDb.perfilManut?.toUpperCase().includes('ADMIN')) ||
             Boolean(userDb.perfilPca?.toUpperCase().includes('ADMIN')) ||
-            (userDb as any).perfilClimatizacao === 'ADMIN',
+            Boolean((userDb as any).perfilClimatizacao?.toUpperCase().includes('ADMIN')),
         }
       : {
           id: session.id,
@@ -89,8 +89,8 @@ export async function GET() {
         };
 
     const isAdminReal =
-      realSession?.perfilSgc === 'ADMIN_PROAD' ||
-      realSession?.perfilManut === 'ADMIN' ||
+      Boolean(realSession?.perfilSgc?.toUpperCase().includes('ADMIN_PROAD')) ||
+      Boolean(realSession?.perfilManut?.toUpperCase().includes('ADMIN')) ||
       Boolean(realSession?.perfilPca?.toUpperCase().includes('ADMIN')) ||
       realSession?.email === 'adj.proad@uern.br' ||
       realSession?.email === 'pedroreboucas@uern.br';

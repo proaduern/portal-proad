@@ -202,6 +202,27 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    if (novoUsuario.perfilPca) {
+      const pcaUrl = process.env.PCA_SYSTEM_URL || process.env.PCA_URL || 'https://pca-uern.vercel.app';
+      fetch(`${pcaUrl}/api/integracao/sincronizar-perfil`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-proad-secret': process.env.PROAD_SSO_SECRET || 'uern_portal_proad_sso_master_key_2026_super_seguro',
+        },
+        body: JSON.stringify({
+          email: novoUsuario.email,
+          nome: novoUsuario.nome,
+          matricula: novoUsuario.matricula,
+          perfilPca: novoUsuario.perfilPca,
+          unidadeSigla: novoUsuario.unidade?.sigla || null,
+          unidadeNome: novoUsuario.unidade?.nome || null,
+          unidadeEmail: novoUsuario.unidade?.email || null,
+          ativo: novoUsuario.status === 'ATIVO',
+        }),
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ success: true, usuario: novoUsuario }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Erro ao cadastrar usuário manualmente.' }, { status: 500 });

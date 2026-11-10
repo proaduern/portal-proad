@@ -260,9 +260,9 @@ export async function POST(
       },
     });
 
-    // Sincroniza imediatamente o perfil com o Sistema PCA (para Agente de Contratação, Planejamento, Pesquisa de Preços, Licitações)
+    // Sincroniza imediatamente o perfil com o Sistema PCA (para múltiplos perfis: Demandante, Setor Técnico, Agente, Planejamento, Pesquisa, Licitações, Entrega, Execução)
     if (usuarioAprovado.perfilPca) {
-      const pcaUrl = process.env.PCA_SYSTEM_URL || 'https://pca-uern.vercel.app';
+      const pcaUrl = process.env.PCA_SYSTEM_URL || process.env.PCA_URL || 'https://pca-uern.vercel.app';
       fetch(`${pcaUrl}/api/integracao/sincronizar-perfil`, {
         method: 'POST',
         headers: {
@@ -274,6 +274,9 @@ export async function POST(
           nome: usuarioAprovado.nome,
           matricula: usuarioAprovado.matricula,
           perfilPca: usuarioAprovado.perfilPca,
+          unidadeSigla: usuarioAprovado.unidade?.sigla || null,
+          unidadeNome: usuarioAprovado.unidade?.nome || null,
+          unidadeEmail: usuarioAprovado.unidade?.email || null,
           ativo: true,
         }),
       }).catch(() => {});

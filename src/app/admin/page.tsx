@@ -87,6 +87,68 @@ interface Usuario {
   dataDevolucao?: string | null;
 }
 
+const OPCOES_PERFIL_PCA = [
+  { value: 'UNIDADE', label: 'UNIDADE — Unidade Demandante (Elabora e envia DFDs no PCA)', badge: 'Sub 01 • PCA' },
+  { value: 'SETOR_INTERNO', label: 'SETOR_INTERNO — Subsetor Interno da Unidade (PCA)', badge: 'Sub 01 • PCA' },
+  { value: 'SETOR_TECNICO', label: 'SETOR_TECNICO — Setor Técnico (Compilação, ETP e Mapa de Riscos)', badge: 'Sub 02 • ETP' },
+  { value: 'PESQUISA_PRECOS', label: 'PESQUISA_PRECOS — Setor de Pesquisa de Preços (Cotações)', badge: 'Sub 03 • Pesquisa' },
+  { value: 'PLANEJAMENTO', label: 'PLANEJAMENTO — Setor de Planejamento (Termo de Referência - TR)', badge: 'Sub 04 • TR' },
+  { value: 'DIRETOR_LICITACOES', label: 'DIRETOR_LICITACOES — Diretor de Licitações / DLC (Pós-ETP até Licitação)', badge: 'Sub 03-05 • DLC' },
+  { value: 'AGENTE_CONTRATACAO', label: 'AGENTE_CONTRATACAO — Agente de Contratação (Edital, Certame e Homologação)', badge: 'Sub 05 • Licitação' },
+  { value: 'LICITACOES', label: 'LICITACOES — Setor de Licitações e Contratos (Minutas e Fase Jurídica)', badge: 'Sub 05 • Licitação' },
+  { value: 'GESTOR_ATA', label: 'GESTOR_ATA — Setor de Gestão de Atas de Registro de Preços (ARP)', badge: 'Sub 05 • Atas' },
+  { value: 'EXECUCAO', label: 'EXECUCAO — Execução de Compras e Contratações (Solicitação ao Fornecedor)', badge: 'Execução' },
+  { value: 'ENTREGA', label: 'ENTREGA — Conferência e Entrega de Bens (Patrimônio / Almoxarifado)', badge: 'Entrega' },
+  { value: 'ADMIN', label: 'ADMIN — Administrador Geral PROAD (Acesso Total a Todos os Subsistemas)', badge: 'Admin Geral' },
+];
+
+const OPCOES_PERFIL_SGC_SERVIDOR = [
+  { value: 'USUARIO', label: 'USUARIO — Gestor / Fiscal (Definido por Contrato no SGC)' },
+  { value: 'GESTOR_ATA', label: 'GESTOR_ATA — Gestor de Atas de Registro de Preços (ARP)' },
+  { value: 'ADMIN_PROAD', label: 'ADMIN_PROAD — Administrador Geral PROAD' },
+];
+
+const OPCOES_PERFIL_MANUT_SERVIDOR = [
+  { value: 'GESTOR_UNIDADE', label: 'GESTOR_UNIDADE — Gestor de Unidade (Abre e Acompanha Chamados)' },
+  { value: 'DEMANDANTE', label: 'DEMANDANTE — Demandante (Servidor Padrão)' },
+  { value: 'FISCAL_TECNICO', label: 'FISCAL_TECNICO — Fiscal Técnico de Manutenção' },
+  { value: 'FISCAL_ADM', label: 'FISCAL_ADM — Fiscal Administrativo' },
+  { value: 'TECNICO_SOBE', label: 'TECNICO_SOBE — Técnico Operacional da SOBE' },
+  { value: 'GESTOR_CONTRATO', label: 'GESTOR_CONTRATO — Gestor de Contrato de Manutenção' },
+  { value: 'ADMIN', label: 'ADMIN — Administrador Geral SOBE/PROAD' },
+];
+
+const OPCOES_PERFIL_DIARIAS_SERVIDOR = [
+  { value: 'DEMANDANTE', label: 'DEMANDANTE — Solicita Diárias e Viagens' },
+  { value: 'FISCAL', label: 'FISCAL — Fiscal / Conferente de Prestação de Contas' },
+  { value: 'APROVADOR', label: 'APROVADOR — Aprovador / Ordenador de Despesas' },
+  { value: 'ADMIN', label: 'ADMIN — Administrador de Diárias (PROAD)' },
+];
+
+const OPCOES_PERFIL_CLIMATIZACAO_SERVIDOR = [
+  { value: 'DEMANDANTE', label: 'DEMANDANTE — Abre e Acompanha Chamados' },
+  { value: 'FISCAL_TECNICO', label: 'FISCAL_TECNICO — Fiscal Técnico de Climatização' },
+  { value: 'FISCAL_ADM', label: 'FISCAL_ADM — Fiscal Administrativo de Climatização' },
+  { value: 'GESTOR', label: 'GESTOR — Gestor de Contrato de Climatização' },
+  { value: 'ADMIN', label: 'ADMIN — Administrador Geral de Climatização (PROAD)' },
+];
+
+function parsePerfisList(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function togglePerfilInString(raw: string | null | undefined, code: string): string {
+  const list = parsePerfisList(raw);
+  if (list.includes(code)) {
+    return list.filter((p) => p !== code).join(',');
+  }
+  return [...list, code].join(',');
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'homologacao' | 'usuarios' | 'unidades'>('homologacao');
@@ -166,6 +228,11 @@ export default function AdminPage() {
     perfilSgc: '',
     perfilManut: '',
     perfilPca: '',
+    permissoesPca: {
+      podeCriarDfd: true,
+      podeEnviarDfd: true,
+      podeVisualizarGeral: true,
+    } as any,
     perfilDiarias: '',
     perfilClimatizacao: '',
     status: 'ATIVO' as 'ATIVO' | 'BLOQUEADO' | 'PENDENTE_APROVACAO' | 'DEVOLVIDO_CORRECAO',
@@ -781,9 +848,14 @@ export default function AdminPage() {
                     cnpjEmpresa: '',
                     razaoSocial: '',
                     cargoPreposto: '',
-                    perfilSgc: 'FISCAL_TECNICO',
+                    perfilSgc: 'USUARIO',
                     perfilManut: 'GESTOR_UNIDADE',
                     perfilPca: 'UNIDADE',
+                    permissoesPca: {
+                      podeCriarDfd: true,
+                      podeEnviarDfd: true,
+                      podeVisualizarGeral: true,
+                    },
                     perfilDiarias: 'DEMANDANTE',
                     perfilClimatizacao: 'DEMANDANTE',
                     status: 'ATIVO',
@@ -879,32 +951,47 @@ export default function AdminPage() {
                         </td>
 
                         <td className="p-3.5">
-                          <div className="flex flex-wrap gap-1">
-                            {u.perfilSgc && (
-                              <span className="px-1.5 py-0.5 rounded bg-blue-900/60 text-blue-200 border border-blue-500/30 text-[10px]">
-                                SGC: {u.perfilSgc}
+                          <div className="flex flex-wrap gap-1 max-w-md">
+                            {parsePerfisList(u.perfilSgc).map((p) => (
+                              <span
+                                key={`sgc-${p}`}
+                                className="px-1.5 py-0.5 rounded bg-blue-900/60 text-blue-200 border border-blue-500/30 text-[10px]"
+                              >
+                                SGC: {p}
                               </span>
-                            )}
-                            {u.perfilManut && (
-                              <span className="px-1.5 py-0.5 rounded bg-emerald-900/60 text-emerald-200 border border-emerald-500/30 text-[10px]">
-                                Manut: {u.perfilManut}
+                            ))}
+                            {parsePerfisList(u.perfilManut).map((p) => (
+                              <span
+                                key={`manut-${p}`}
+                                className="px-1.5 py-0.5 rounded bg-emerald-900/60 text-emerald-200 border border-emerald-500/30 text-[10px]"
+                              >
+                                Manut: {p}
                               </span>
-                            )}
-                            {u.perfilPca && (
-                              <span className="px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-200 border border-purple-500/30 text-[10px]">
-                                PCA: {u.perfilPca}
+                            ))}
+                            {parsePerfisList(u.perfilPca).map((p) => (
+                              <span
+                                key={`pca-${p}`}
+                                className="px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-200 border border-purple-500/30 text-[10px] font-medium"
+                              >
+                                PCA: {p}
                               </span>
-                            )}
-                            {u.perfilDiarias && (
-                              <span className="px-1.5 py-0.5 rounded bg-cyan-900/60 text-cyan-200 border border-cyan-500/30 text-[10px]">
-                                Diárias: {u.perfilDiarias}
+                            ))}
+                            {parsePerfisList(u.perfilDiarias).map((p) => (
+                              <span
+                                key={`dia-${p}`}
+                                className="px-1.5 py-0.5 rounded bg-cyan-900/60 text-cyan-200 border border-cyan-500/30 text-[10px]"
+                              >
+                                Diárias: {p}
                               </span>
-                            )}
-                            {u.perfilClimatizacao && (
-                              <span className="px-1.5 py-0.5 rounded bg-sky-900/60 text-sky-200 border border-sky-500/30 text-[10px]">
-                                Clima: {u.perfilClimatizacao}
+                            ))}
+                            {parsePerfisList(u.perfilClimatizacao).map((p) => (
+                              <span
+                                key={`clima-${p}`}
+                                className="px-1.5 py-0.5 rounded bg-sky-900/60 text-sky-200 border border-sky-500/30 text-[10px]"
+                              >
+                                Clima: {p}
                               </span>
-                            )}
+                            ))}
                             {!u.perfilSgc && !u.perfilManut && !u.perfilPca && !u.perfilDiarias && !u.perfilClimatizacao && (
                               <span className="text-slate-500 text-[10px]">Nenhum perfil ativo</span>
                             )}
@@ -974,6 +1061,11 @@ export default function AdminPage() {
                                     perfilSgc: u.perfilSgc || '',
                                     perfilManut: u.perfilManut || '',
                                     perfilPca: u.perfilPca || '',
+                                    permissoesPca: u.permissoesPca || {
+                                      podeCriarDfd: true,
+                                      podeEnviarDfd: true,
+                                      podeVisualizarGeral: true,
+                                    },
                                     perfilDiarias: u.perfilDiarias || '',
                                     perfilClimatizacao: u.perfilClimatizacao || '',
                                     status: u.status,
@@ -1304,91 +1396,174 @@ export default function AdminPage() {
 
             {/* Matriz de Perfis por Sistema */}
             <div className="space-y-4 mb-6">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 border-b border-white/10 pb-1.5">
-                Atribuição de Perfis por Sistema
-              </h4>
+              <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                  Atribuição de Perfis por Sistema (Suporta Múltiplos Perfis)
+                </h4>
+                <span className="text-[10px] text-slate-400">
+                  Marque um ou mais perfis conforme a atuação do servidor
+                </span>
+              </div>
 
               {/* 1. SGC */}
               <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5" /> SGC - Contratos e Terceirização
+                    <FileText className="w-3.5 h-3.5" /> SGC - Contratos, Atas e Terceirização
                   </span>
-                </div>
-                <select
-                  value={homologarSgc}
-                  onChange={(e) => setHomologarSgc(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-blue-500"
-                >
-                  <option value="">Sem Acesso ao SGC</option>
-                  {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' ? (
-                    <>
-                      <option value="USUARIO">Usuário / Gestor / Fiscal (Definido por Contrato no SGC)</option>
-                      <option value="ADMIN_PROAD">Administrador Geral PROAD</option>
-                    </>
-                  ) : (
-                    <option value="FORNECEDOR">Fornecedor / Empresa Contratada</option>
+                  {homologarSgc && (
+                    <button
+                      type="button"
+                      onClick={() => setHomologarSgc('')}
+                      className="text-[10px] text-slate-400 hover:text-red-300 underline"
+                    >
+                      Limpar SGC
+                    </button>
                   )}
-                </select>
+                </div>
+                {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {OPCOES_PERFIL_SGC_SERVIDOR.map((opt) => {
+                      const checked = parsePerfisList(homologarSgc).includes(opt.value);
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
+                            checked
+                              ? 'bg-blue-500/15 border-blue-500/50 text-blue-100 font-semibold'
+                              : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => setHomologarSgc(togglePerfilInString(homologarSgc, opt.value))}
+                            className="accent-blue-500 rounded"
+                          />
+                          <span className="leading-snug">{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <select
+                    value={homologarSgc}
+                    onChange={(e) => setHomologarSgc(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-blue-500"
+                  >
+                    <option value="">Sem Acesso ao SGC</option>
+                    <option value="FORNECEDOR">Fornecedor / Empresa Contratada</option>
+                  </select>
+                )}
               </div>
 
               {/* 2. Manutenção Predial */}
               <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                    <Wrench className="w-3.5 h-3.5" /> Manutenção Predial & OS
+                    <Wrench className="w-3.5 h-3.5" /> Manutenção Predial &amp; OS
                   </span>
-                </div>
-                <select
-                  value={homologarManut}
-                  onChange={(e) => setHomologarManut(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-emerald-500"
-                >
-                  <option value="">Sem Acesso à Manutenção</option>
-                  {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' ? (
-                    <>
-                      <option value="GESTOR_UNIDADE">Gestor de Unidade (Abre e Acompanha Chamados)</option>
-                      <option value="DEMANDANTE">Demandante (Servidor Padrão)</option>
-                      <option value="FISCAL_TECNICO">Fiscal Técnico de Manutenção</option>
-                      <option value="FISCAL_ADM">Fiscal Administrativo</option>
-                      <option value="TECNICO_SOBE">Técnico Operacional da SOBE</option>
-                      <option value="GESTOR_CONTRATO">Gestor de Contrato de Manutenção</option>
-                      <option value="ADMIN">Administrador Geral SOBE/PROAD</option>
-                    </>
-                  ) : (
-                    <option value="EMPRESA">Empresa Contratada / Prestador de Serviços</option>
+                  {homologarManut && (
+                    <button
+                      type="button"
+                      onClick={() => setHomologarManut('')}
+                      className="text-[10px] text-slate-400 hover:text-red-300 underline"
+                    >
+                      Limpar Manutenção
+                    </button>
                   )}
-                </select>
+                </div>
+                {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {OPCOES_PERFIL_MANUT_SERVIDOR.map((opt) => {
+                      const checked = parsePerfisList(homologarManut).includes(opt.value);
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
+                            checked
+                              ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-100 font-semibold'
+                              : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => setHomologarManut(togglePerfilInString(homologarManut, opt.value))}
+                            className="accent-emerald-500 rounded"
+                          />
+                          <span className="leading-snug">{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <select
+                    value={homologarManut}
+                    onChange={(e) => setHomologarManut(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-emerald-500"
+                  >
+                    <option value="">Sem Acesso à Manutenção</option>
+                    <option value="EMPRESA">Empresa Contratada / Prestador de Serviços</option>
+                  </select>
+                )}
               </div>
 
               {/* 3. PCA e Subsistemas Pré-Contratuais (apenas servidores) */}
               {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' && (
-                <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
+                <div className="p-3 rounded-xl bg-slate-950 border border-purple-500/30">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
-                      <ShoppingBag className="w-3.5 h-3.5" /> PCA &amp; Subsistemas Pré-Contratuais (01 a 05)
-                    </span>
+                    <div>
+                      <span className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
+                        <ShoppingBag className="w-3.5 h-3.5" /> PCA, ETP/Riscos, Pesquisa, TR, Licitações &amp; Entrega (Múltiplos Perfis)
+                      </span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">
+                        Ex.: Marque UNIDADE + SETOR_TECNICO para servidores de Patrimônio, STI, SOBE, Almoxarifado, etc.
+                      </span>
+                    </div>
+                    {homologarPca && (
+                      <button
+                        type="button"
+                        onClick={() => setHomologarPca('')}
+                        className="text-[10px] text-slate-400 hover:text-red-300 underline shrink-0"
+                      >
+                        Limpar PCA
+                      </button>
+                    )}
                   </div>
-                  <select
-                    value={homologarPca}
-                    onChange={(e) => setHomologarPca(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-purple-500"
-                  >
-                    <option value="">Sem Acesso aos Subsistemas Pré-Contratuais</option>
-                    <option value="UNIDADE">UNIDADE (Unidade Demandante — Diretor / Servidor PCA)</option>
-                    <option value="SETOR_INTERNO">SETOR_INTERNO (Subsetor Interno da Unidade — PCA)</option>
-                    <option value="SETOR_TECNICO">SETOR_TECNICO (Setor Técnico — Subsistema ETP e Mapa de Riscos)</option>
-                    <option value="PESQUISA_PRECOS">PESQUISA_PRECOS (Setor de Pesquisa de Preços — Subsistema Pesquisa de Preços)</option>
-                    <option value="PLANEJAMENTO">PLANEJAMENTO (Setor de Planejamento — Subsistema Termo de Referência)</option>
-                    <option value="DIRETOR_LICITACOES">DIRETOR_LICITACOES (Diretor de Licitações / DLC — Gestão Pós-ETP até a Licitação)</option>
-                    <option value="AGENTE_CONTRATACAO">AGENTE_CONTRATACAO (Agente de Contratação — Análise Preliminar, Dotação, Edital e Homologação)</option>
-                    <option value="LICITACOES">LICITACOES (Setor de Licitações / Contratos — Subsistema Minutas e Licitações)</option>
-                    <option value="GESTOR_ATA">GESTOR_ATA (Setor de Gestão de Atas — Subsistema Minutas de Ata / ARP)</option>
-                    <option value="ADMIN">ADMIN (Administrador Geral PROAD — Todos os Subsistemas)</option>
-                  </select>
 
-                  {(homologarPca === 'UNIDADE' || homologarPca === 'SETOR_INTERNO') && (
-                    <div className="mt-2 pt-2 border-t border-white/5 flex gap-4 text-[11px] text-slate-300">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {OPCOES_PERFIL_PCA.map((opt) => {
+                      const checked = parsePerfisList(homologarPca).includes(opt.value);
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`flex items-start justify-between gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
+                            checked
+                              ? 'bg-purple-500/20 border-purple-500/60 text-purple-100 font-semibold'
+                              : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => setHomologarPca(togglePerfilInString(homologarPca, opt.value))}
+                              className="accent-purple-500 rounded mt-0.5"
+                            />
+                            <span className="leading-snug text-[11px]">{opt.label}</span>
+                          </div>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/90 text-purple-300 border border-purple-500/30 shrink-0">
+                            {opt.badge}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {parsePerfisList(homologarPca).some((r) => r === 'UNIDADE' || r === 'SETOR_INTERNO') && (
+                    <div className="mt-3 pt-2.5 border-t border-white/10 flex flex-wrap gap-4 text-[11px] text-slate-300">
+                      <span className="text-purple-300 font-semibold">Permissões de DFD na Unidade:</span>
                       <label className="flex items-center gap-1.5 cursor-pointer">
                         <input
                           type="checkbox"
@@ -1421,18 +1596,39 @@ export default function AdminPage() {
                     <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
                       <Plane className="w-3.5 h-3.5" /> Diárias e Passagens
                     </span>
+                    {homologarDiarias && (
+                      <button
+                        type="button"
+                        onClick={() => setHomologarDiarias('')}
+                        className="text-[10px] text-slate-400 hover:text-red-300 underline"
+                      >
+                        Limpar Diárias
+                      </button>
+                    )}
                   </div>
-                  <select
-                    value={homologarDiarias}
-                    onChange={(e) => setHomologarDiarias(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-cyan-500"
-                  >
-                    <option value="">Sem Acesso a Diárias</option>
-                    <option value="DEMANDANTE">Demandante (Solicita Diárias e Viagens)</option>
-                    <option value="FISCAL">Fiscal / Conferente de Prestação de Contas</option>
-                    <option value="APROVADOR">Aprovador / Ordenador de Despesas</option>
-                    <option value="ADMIN">Administrador de Diárias (PROAD)</option>
-                  </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {OPCOES_PERFIL_DIARIAS_SERVIDOR.map((opt) => {
+                      const checked = parsePerfisList(homologarDiarias).includes(opt.value);
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
+                            checked
+                              ? 'bg-cyan-500/15 border-cyan-500/50 text-cyan-100 font-semibold'
+                              : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => setHomologarDiarias(togglePerfilInString(homologarDiarias, opt.value))}
+                            className="accent-cyan-500 rounded"
+                          />
+                          <span className="leading-snug">{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -1440,27 +1636,54 @@ export default function AdminPage() {
               <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
-                    <Wind className="w-3.5 h-3.5" /> Climatização & Refrigeração
+                    <Wind className="w-3.5 h-3.5" /> Climatização &amp; Refrigeração
                   </span>
-                </div>
-                <select
-                  value={homologarClimatizacao}
-                  onChange={(e) => setHomologarClimatizacao(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-sky-500"
-                >
-                  <option value="">Sem Acesso à Climatização</option>
-                  {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' ? (
-                    <>
-                      <option value="DEMANDANTE">Demandante (Abre e Acompanha Chamados)</option>
-                      <option value="FISCAL_TECNICO">Fiscal Técnico de Climatização</option>
-                      <option value="FISCAL_ADM">Fiscal Administrativo de Climatização</option>
-                      <option value="GESTOR">Gestor de Contrato de Climatização</option>
-                      <option value="ADMIN">Administrador Geral de Climatização (PROAD)</option>
-                    </>
-                  ) : (
-                    <option value="EMPRESA">Empresa Contratada de Manutenção / Refrigeração</option>
+                  {homologarClimatizacao && (
+                    <button
+                      type="button"
+                      onClick={() => setHomologarClimatizacao('')}
+                      className="text-[10px] text-slate-400 hover:text-red-300 underline"
+                    >
+                      Limpar Climatização
+                    </button>
                   )}
-                </select>
+                </div>
+                {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {OPCOES_PERFIL_CLIMATIZACAO_SERVIDOR.map((opt) => {
+                      const checked = parsePerfisList(homologarClimatizacao).includes(opt.value);
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
+                            checked
+                              ? 'bg-sky-500/15 border-sky-500/50 text-sky-100 font-semibold'
+                              : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setHomologarClimatizacao(togglePerfilInString(homologarClimatizacao, opt.value))
+                            }
+                            className="accent-sky-500 rounded"
+                          />
+                          <span className="leading-snug">{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <select
+                    value={homologarClimatizacao}
+                    onChange={(e) => setHomologarClimatizacao(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-sky-500"
+                  >
+                    <option value="">Sem Acesso à Climatização</option>
+                    <option value="EMPRESA">Empresa Contratada de Manutenção / Refrigeração</option>
+                  </select>
+                )}
               </div>
             </div>
 
@@ -1832,97 +2055,333 @@ export default function AdminPage() {
               )}
 
               {/* Matriz de Perfis */}
-              <div className="pt-2 border-t border-white/10 space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block">
-                  Perfis de Acesso aos Sistemas
-                </span>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[11px] text-slate-300 mb-1">Perfil SGC</label>
+              <div className="pt-2 border-t border-white/10 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block">
+                    Perfis de Acesso aos Sistemas (Suporta Múltiplos Perfis)
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    Marque livremente um ou mais perfis para este usuário
+                  </span>
+                </div>
+
+                {/* 1. PCA & Subsistemas Pré-Contratuais */}
+                {usuarioForm.tipoUsuario === 'SERVIDOR_UERN' && (
+                  <div className="p-3 rounded-xl bg-slate-950 border border-purple-500/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
+                          <ShoppingBag className="w-3.5 h-3.5" /> PCA, ETP/Riscos, Pesquisa, TR, Licitações &amp; Entrega
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          Ex.: Marque UNIDADE + SETOR_TECNICO para servidores de Patrimônio, STI, SOBE, Almoxarifado, etc.
+                        </span>
+                      </div>
+                      {usuarioForm.perfilPca && (
+                        <button
+                          type="button"
+                          onClick={() => setUsuarioForm({ ...usuarioForm, perfilPca: '' })}
+                          className="text-[10px] text-slate-400 hover:text-red-300 underline shrink-0"
+                        >
+                          Limpar PCA
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {OPCOES_PERFIL_PCA.map((opt) => {
+                        const checked = parsePerfisList(usuarioForm.perfilPca).includes(opt.value);
+                        return (
+                          <label
+                            key={opt.value}
+                            className={`flex items-start justify-between gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
+                              checked
+                                ? 'bg-purple-500/20 border-purple-500/60 text-purple-100 font-semibold'
+                                : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() =>
+                                  setUsuarioForm({
+                                    ...usuarioForm,
+                                    perfilPca: togglePerfilInString(usuarioForm.perfilPca, opt.value),
+                                  })
+                                }
+                                className="accent-purple-500 rounded mt-0.5"
+                              />
+                              <span className="leading-snug text-[11px]">{opt.label}</span>
+                            </div>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/90 text-purple-300 border border-purple-500/30 shrink-0">
+                              {opt.badge}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    {parsePerfisList(usuarioForm.perfilPca).some((r) => r === 'UNIDADE' || r === 'SETOR_INTERNO') && (
+                      <div className="mt-3 pt-2.5 border-t border-white/10 flex flex-wrap gap-4 text-[11px] text-slate-300">
+                        <span className="text-purple-300 font-semibold">Permissões de DFD na Unidade:</span>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={usuarioForm.permissoesPca?.podeCriarDfd ?? true}
+                            onChange={(e) =>
+                              setUsuarioForm({
+                                ...usuarioForm,
+                                permissoesPca: {
+                                  ...(usuarioForm.permissoesPca || {}),
+                                  podeCriarDfd: e.target.checked,
+                                },
+                              })
+                            }
+                          />
+                          <span>Pode Elaborar DFD</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={usuarioForm.permissoesPca?.podeEnviarDfd ?? true}
+                            onChange={(e) =>
+                              setUsuarioForm({
+                                ...usuarioForm,
+                                permissoesPca: {
+                                  ...(usuarioForm.permissoesPca || {}),
+                                  podeEnviarDfd: e.target.checked,
+                                },
+                              })
+                            }
+                          />
+                          <span>Pode Enviar para PROAD</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 2. SGC */}
+                <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5" /> Perfil SGC (Contratos, Atas e Terceirização)
+                    </span>
+                    {usuarioForm.perfilSgc && (
+                      <button
+                        type="button"
+                        onClick={() => setUsuarioForm({ ...usuarioForm, perfilSgc: '' })}
+                        className="text-[10px] text-slate-400 hover:text-red-300 underline"
+                      >
+                        Limpar SGC
+                      </button>
+                    )}
+                  </div>
+                  {usuarioForm.tipoUsuario === 'SERVIDOR_UERN' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {OPCOES_PERFIL_SGC_SERVIDOR.map((opt) => {
+                        const checked = parsePerfisList(usuarioForm.perfilSgc).includes(opt.value);
+                        return (
+                          <label
+                            key={opt.value}
+                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
+                              checked
+                                ? 'bg-blue-500/15 border-blue-500/50 text-blue-100 font-semibold'
+                                : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setUsuarioForm({
+                                  ...usuarioForm,
+                                  perfilSgc: togglePerfilInString(usuarioForm.perfilSgc, opt.value),
+                                })
+                              }
+                              className="accent-blue-500 rounded"
+                            />
+                            <span className="leading-snug">{opt.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
                     <select
                       value={usuarioForm.perfilSgc}
                       onChange={(e) => setUsuarioForm({ ...usuarioForm, perfilSgc: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white outline-none"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none"
                     >
                       <option value="">Nenhum (Sem Acesso)</option>
-                      <option value="USUARIO">USUARIO (Gestor / Fiscal por Contrato)</option>
-                      <option value="ADMIN_PROAD">ADMIN_PROAD (Administrador Geral)</option>
                       <option value="FORNECEDOR">FORNECEDOR (Contratada)</option>
                     </select>
-                  </div>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="block text-[11px] text-slate-300 mb-1">Perfil Manutenção</label>
+                {/* 3. Manutenção Predial */}
+                <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                      <Wrench className="w-3.5 h-3.5" /> Perfil Manutenção Predial &amp; OS
+                    </span>
+                    {usuarioForm.perfilManut && (
+                      <button
+                        type="button"
+                        onClick={() => setUsuarioForm({ ...usuarioForm, perfilManut: '' })}
+                        className="text-[10px] text-slate-400 hover:text-red-300 underline"
+                      >
+                        Limpar Manutenção
+                      </button>
+                    )}
+                  </div>
+                  {usuarioForm.tipoUsuario === 'SERVIDOR_UERN' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {OPCOES_PERFIL_MANUT_SERVIDOR.map((opt) => {
+                        const checked = parsePerfisList(usuarioForm.perfilManut).includes(opt.value);
+                        return (
+                          <label
+                            key={opt.value}
+                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
+                              checked
+                                ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-100 font-semibold'
+                                : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setUsuarioForm({
+                                  ...usuarioForm,
+                                  perfilManut: togglePerfilInString(usuarioForm.perfilManut, opt.value),
+                                })
+                              }
+                              className="accent-emerald-500 rounded"
+                            />
+                            <span className="leading-snug">{opt.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
                     <select
                       value={usuarioForm.perfilManut}
                       onChange={(e) => setUsuarioForm({ ...usuarioForm, perfilManut: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white outline-none"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none"
                     >
                       <option value="">Nenhum</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="GESTOR_UNIDADE">GESTOR_UNIDADE</option>
-                      <option value="FISCAL_TECNICO">FISCAL_TECNICO</option>
-                      <option value="FISCAL_ADM">FISCAL_ADM</option>
-                      <option value="DEMANDANTE">DEMANDANTE</option>
-                      <option value="TECNICO_SOBE">TECNICO_SOBE</option>
                       <option value="EMPRESA">EMPRESA</option>
                     </select>
-                  </div>
+                  )}
+                </div>
 
-                  <div className="sm:col-span-3">
-                    <label className="block text-[11px] text-slate-300 mb-1">
-                      Perfil PCA &amp; Subsistemas Pré-Contratuais (01 a 05)
-                    </label>
-                    <select
-                      value={usuarioForm.perfilPca}
-                      onChange={(e) => setUsuarioForm({ ...usuarioForm, perfilPca: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white outline-none"
-                    >
-                      <option value="">Nenhum (Sem Acesso)</option>
-                      <option value="UNIDADE">UNIDADE (Unidade Demandante — Diretor / Servidor PCA)</option>
-                      <option value="SETOR_INTERNO">SETOR_INTERNO (Subsetor Interno da Unidade — PCA)</option>
-                      <option value="SETOR_TECNICO">SETOR_TECNICO (Setor Técnico — Subsistema ETP e Mapa de Riscos)</option>
-                      <option value="PESQUISA_PRECOS">PESQUISA_PRECOS (Setor de Pesquisa de Preços — Subsistema Pesquisa de Preços)</option>
-                      <option value="PLANEJAMENTO">PLANEJAMENTO (Setor de Planejamento — Subsistema Termo de Referência)</option>
-                      <option value="DIRETOR_LICITACOES">DIRETOR_LICITACOES (Diretor de Licitações / DLC — Gestão Pós-ETP até a Licitação)</option>
-                      <option value="AGENTE_CONTRATACAO">AGENTE_CONTRATACAO (Agente de Contratação — Análise Preliminar, Dotação, Edital e Homologação)</option>
-                      <option value="LICITACOES">LICITACOES (Setor de Licitações / Contratos — Subsistema Minutas e Licitações)</option>
-                      <option value="GESTOR_ATA">GESTOR_ATA (Setor de Gestão de Atas — Subsistema Minutas de Ata / ARP)</option>
-                      <option value="ADMIN">ADMIN (Administrador Geral PROAD — Todos os Subsistemas)</option>
-                    </select>
+                {/* 4. Diárias */}
+                {usuarioForm.tipoUsuario === 'SERVIDOR_UERN' && (
+                  <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                        <Plane className="w-3.5 h-3.5" /> Perfil Diárias e Passagens
+                      </span>
+                      {usuarioForm.perfilDiarias && (
+                        <button
+                          type="button"
+                          onClick={() => setUsuarioForm({ ...usuarioForm, perfilDiarias: '' })}
+                          className="text-[10px] text-slate-400 hover:text-red-300 underline"
+                        >
+                          Limpar Diárias
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {OPCOES_PERFIL_DIARIAS_SERVIDOR.map((opt) => {
+                        const checked = parsePerfisList(usuarioForm.perfilDiarias).includes(opt.value);
+                        return (
+                          <label
+                            key={opt.value}
+                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
+                              checked
+                                ? 'bg-cyan-500/15 border-cyan-500/50 text-cyan-100 font-semibold'
+                                : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setUsuarioForm({
+                                  ...usuarioForm,
+                                  perfilDiarias: togglePerfilInString(usuarioForm.perfilDiarias, opt.value),
+                                })
+                              }
+                              className="accent-cyan-500 rounded"
+                            />
+                            <span className="leading-snug">{opt.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
+                )}
 
-                  <div>
-                    <label className="block text-[11px] text-slate-300 mb-1">Perfil Diárias</label>
-                    <select
-                      value={usuarioForm.perfilDiarias}
-                      onChange={(e) => setUsuarioForm({ ...usuarioForm, perfilDiarias: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white outline-none"
-                    >
-                      <option value="">Nenhum</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="DEMANDANTE">DEMANDANTE</option>
-                      <option value="FISCAL">FISCAL</option>
-                      <option value="APROVADOR">APROVADOR</option>
-                    </select>
+                {/* 5. Climatização */}
+                <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
+                      <Wind className="w-3.5 h-3.5" /> Perfil Climatização &amp; Refrigeração
+                    </span>
+                    {usuarioForm.perfilClimatizacao && (
+                      <button
+                        type="button"
+                        onClick={() => setUsuarioForm({ ...usuarioForm, perfilClimatizacao: '' })}
+                        className="text-[10px] text-slate-400 hover:text-red-300 underline"
+                      >
+                        Limpar Climatização
+                      </button>
+                    )}
                   </div>
-
-                  <div>
-                    <label className="block text-[11px] text-slate-300 mb-1">Perfil Climatização</label>
+                  {usuarioForm.tipoUsuario === 'SERVIDOR_UERN' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {OPCOES_PERFIL_CLIMATIZACAO_SERVIDOR.map((opt) => {
+                        const checked = parsePerfisList(usuarioForm.perfilClimatizacao).includes(opt.value);
+                        return (
+                          <label
+                            key={opt.value}
+                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
+                              checked
+                                ? 'bg-sky-500/15 border-sky-500/50 text-sky-100 font-semibold'
+                                : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setUsuarioForm({
+                                  ...usuarioForm,
+                                  perfilClimatizacao: togglePerfilInString(
+                                    usuarioForm.perfilClimatizacao,
+                                    opt.value
+                                  ),
+                                })
+                              }
+                              className="accent-sky-500 rounded"
+                            />
+                            <span className="leading-snug">{opt.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
                     <select
                       value={usuarioForm.perfilClimatizacao}
                       onChange={(e) => setUsuarioForm({ ...usuarioForm, perfilClimatizacao: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white outline-none"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none"
                     >
                       <option value="">Nenhum</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="DEMANDANTE">DEMANDANTE</option>
-                      <option value="FISCAL_TECNICO">FISCAL_TECNICO</option>
-                      <option value="FISCAL_ADM">FISCAL_ADM</option>
-                      <option value="GESTOR">GESTOR</option>
                       <option value="EMPRESA">EMPRESA</option>
                     </select>
-                  </div>
+                  )}
                 </div>
               </div>
 

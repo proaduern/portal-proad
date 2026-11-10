@@ -87,11 +87,11 @@ export async function getSession(): Promise<SessionPayload | null> {
     if (!realSession) return null;
 
     const isAdmin =
-      realSession.perfilSgc === 'ADMIN_PROAD' ||
-      realSession.perfilManut === 'ADMIN' ||
+      Boolean(realSession.perfilSgc?.toUpperCase().includes('ADMIN_PROAD')) ||
+      Boolean(realSession.perfilManut?.toUpperCase().includes('ADMIN')) ||
       Boolean(realSession.perfilPca?.toUpperCase().includes('ADMIN')) ||
-      realSession.perfilDiarias === 'ADMIN' ||
-      realSession.perfilClimatizacao === 'ADMIN' ||
+      Boolean(realSession.perfilDiarias?.toUpperCase().includes('ADMIN')) ||
+      Boolean(realSession.perfilClimatizacao?.toUpperCase().includes('ADMIN')) ||
       realSession.email === 'adj.proad@uern.br' ||
       realSession.email === 'pedroreboucas@uern.br';
 
@@ -173,10 +173,13 @@ export async function clearSessionCookie(): Promise<void> {
 }
 
 /**
- * Gera um token de Single Sign-On (SSO) com expirao curta (2 minutos)
- * para transio segura de clique do Launcher para os sistemas de destino.
+ * Gera um token de Single Sign-On (SSO) com expiração curta (2 minutos)
+ * para transição segura de clique do Launcher para os sistemas de destino.
  */
-export async function generateSsoToken(usuario: SessionPayload & { unidadeEmail?: string | null }, targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO'): Promise<string> {
+export async function generateSsoToken(
+  usuario: SessionPayload & { unidadeEmail?: string | null; perfisPca?: string | null },
+  targetSystem: 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO'
+): Promise<string> {
   return new SignJWT({
     userId: usuario.id,
     nome: usuario.nome,
@@ -199,7 +202,8 @@ export async function generateSsoToken(usuario: SessionPayload & { unidadeEmail?
         ? usuario.perfilPca
         : targetSystem === 'DIARIAS'
         ? usuario.perfilDiarias
-        : (usuario.perfilClimatizacao || (usuario.perfilSgc === 'ADMIN_PROAD' || usuario.perfilManut === 'ADMIN' ? 'ADMIN' : 'DEMANDANTE')),
+        : (usuario.perfilClimatizacao || (usuario.perfilSgc?.includes('ADMIN_PROAD') || usuario.perfilManut?.includes('ADMIN') ? 'ADMIN' : 'DEMANDANTE')),
+    perfisPca: targetSystem === 'PCA' ? (usuario.perfisPca || usuario.perfilPca) : undefined,
     permissoesPca: targetSystem === 'PCA' ? usuario.permissoesPca : undefined,
   })
     .setProtectedHeader({ alg: 'HS256' })

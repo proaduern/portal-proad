@@ -29,7 +29,8 @@ const PRE_CONTRATUAL_SYSTEMS: TargetSystemType[] = [
 function hasSubsistemaAccess(
   perfilPca: string | null | undefined,
   isAdminGeral: boolean,
-  target: string
+  target: string,
+  preferredRole?: string
 ): string | null {
   if (isAdminGeral || perfilPca?.toUpperCase().includes('ADMIN')) {
     return 'ADMIN';
@@ -42,9 +43,22 @@ function hasSubsistemaAccess(
 
   if (roles.length === 0) return null;
 
+  if (preferredRole && roles.includes(preferredRole.toUpperCase())) {
+    return preferredRole.toUpperCase();
+  }
+
   if (target === 'PCA') {
     const match = roles.find((r) =>
-      ['UNIDADE', 'DEMANDANTE', 'DIRETOR_UNIDADE', 'SETOR_INTERNO', 'SERVIDOR_UNIDADE', 'PCA'].includes(r)
+      [
+        'UNIDADE',
+        'DEMANDANTE',
+        'DIRETOR_UNIDADE',
+        'SETOR_INTERNO',
+        'SERVIDOR_UNIDADE',
+        'PCA',
+        'EXECUCAO',
+        'ENTREGA',
+      ].includes(r)
     );
     if (match) return match;
   } else if (target === 'ETP_RISCOS') {
@@ -67,7 +81,15 @@ function hasSubsistemaAccess(
     }
   } else if (target === 'LICITACOES_MINUTAS') {
     const match = roles.find((r) =>
-      ['DIRETOR_LICITACOES', 'DIRETOR_DLC', 'LICITACOES', 'AGENTE_CONTRATACAO', 'GESTOR_ATA', 'CONTRATOS', 'MINUTAS'].includes(r)
+      [
+        'DIRETOR_LICITACOES',
+        'DIRETOR_DLC',
+        'LICITACOES',
+        'AGENTE_CONTRATACAO',
+        'GESTOR_ATA',
+        'CONTRATOS',
+        'MINUTAS',
+      ].includes(r)
     );
     if (match) return match;
   }
@@ -90,9 +112,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { targetSystem, isTreinamento } = body as {
+    const { targetSystem, isTreinamento, preferredRole } = body as {
       targetSystem: TargetSystemType;
       isTreinamento?: boolean;
+      preferredRole?: string;
     };
 
     if (!targetSystem || !VALID_SYSTEMS.includes(targetSystem)) {
@@ -136,10 +159,10 @@ export async function POST(request: NextRequest) {
     }
 
     const isAdminGeral =
-      userDb.perfilSgc === 'ADMIN_PROAD' ||
-      userDb.perfilManut === 'ADMIN' ||
+      Boolean(userDb.perfilSgc?.toUpperCase().includes('ADMIN_PROAD')) ||
+      Boolean(userDb.perfilManut?.toUpperCase().includes('ADMIN')) ||
       Boolean(userDb.perfilPca?.toUpperCase().includes('ADMIN')) ||
-      (userDb as any).perfilClimatizacao === 'ADMIN';
+      Boolean((userDb as any).perfilClimatizacao?.toUpperCase().includes('ADMIN'));
 
     // Verifica se possui permissão no sistema de destino
     let roleForSystem: string | null = null;
@@ -152,7 +175,7 @@ export async function POST(request: NextRequest) {
       roleForSystem = userDb.perfilManut || (isAdminGeral ? 'ADMIN' : null);
       systemBaseUrl = process.env.MANUTENCAO_URL || 'http://localhost:3003';
     } else if (PRE_CONTRATUAL_SYSTEMS.includes(targetSystem)) {
-      roleForSystem = hasSubsistemaAccess(userDb.perfilPca, isAdminGeral, targetSystem);
+      roleForSystem = hasSubsistemaAccess(userDb.perfilPca, isAdminGeral, targetSystem, preferredRole);
       systemBaseUrl = process.env.PCA_URL || 'http://localhost:3002';
     } else if (targetSystem === 'DIARIAS') {
       roleForSystem = userDb.perfilDiarias || (isAdminGeral ? 'ADMIN' : null);
@@ -183,7 +206,7 @@ export async function POST(request: NextRequest) {
       ? 'PCA'
       : (targetSystem as 'SGC' | 'MANUTENCAO' | 'PCA' | 'DIARIAS' | 'CLIMATIZACAO');
 
-    // Cria token seguro de salto SSO
+    // Cria token seguro de salto SSO (preservando todos os perfisPca autorizados para permitir alternância no destino)
     const ssoToken = await generateSsoToken(
       {
         id: userDb.id,
@@ -203,6 +226,7 @@ export async function POST(request: NextRequest) {
         perfilSgc: userDb.perfilSgc,
         perfilManut: userDb.perfilManut,
         perfilPca: isPreContratual ? roleForSystem : userDb.perfilPca,
+        perfisPca: userDb.perfilPca,
         permissoesPca: userDb.permissoesPca,
         perfilDiarias: userDb.perfilDiarias,
         perfilClimatizacao: (userDb as any).perfilClimatizacao,
