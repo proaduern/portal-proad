@@ -33,7 +33,51 @@ export async function POST(request: NextRequest) {
 
     let payload: SessionPayload;
 
-    if (tipo === 'FORNECEDOR' || role === 'FORNECEDOR') {
+    if (tipo === 'USUARIO_REAL' || (usuarioId && tipo !== 'ARQUETIPO')) {
+      if (!usuarioId) {
+        return NextResponse.json({ error: 'ID do usuário não fornecido.' }, { status: 400 });
+      }
+
+      const usuarioDb = await prisma.usuarioCentral.findUnique({
+        where: { id: usuarioId },
+        include: { unidade: true },
+      });
+
+      if (!usuarioDb) {
+        return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+      }
+
+      if (usuarioDb.status !== 'ATIVO') {
+        return NextResponse.json(
+          {
+            error: `Não é possível atuar como este usuário porque ele está com status ${usuarioDb.status}. Apenas usuários ATIVOS podem ser operados.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      payload = {
+        id: usuarioDb.id,
+        nome: usuarioDb.nome,
+        email: usuarioDb.email,
+        cpf: usuarioDb.cpf,
+        matricula: usuarioDb.matricula || null,
+        tipoUsuario: usuarioDb.tipoUsuario,
+        status: usuarioDb.status,
+        unidadeId: usuarioDb.unidadeId || null,
+        unidadeSigla: usuarioDb.unidade?.sigla || null,
+        unidadeNome: usuarioDb.unidade?.nome || null,
+        unidadeCampus: usuarioDb.unidade?.campus || null,
+        cnpjEmpresa: usuarioDb.cnpjEmpresa || null,
+        razaoSocial: usuarioDb.razaoSocial || null,
+        perfilSgc: usuarioDb.perfilSgc || null,
+        perfilManut: usuarioDb.perfilManut || null,
+        perfilPca: usuarioDb.perfilPca || null,
+        permissoesPca: usuarioDb.permissoesPca || null,
+        perfilDiarias: usuarioDb.perfilDiarias || null,
+        perfilClimatizacao: (usuarioDb as any).perfilClimatizacao || null,
+      };
+    } else if (tipo === 'FORNECEDOR' || role === 'FORNECEDOR') {
       const cnpj = fornecedorCnpj || '12.345.678/0001-90';
       const razao = fornecedorNome || 'AB Engenharia e Construções Ltda';
       payload = {

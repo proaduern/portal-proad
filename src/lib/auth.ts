@@ -145,7 +145,7 @@ export async function encerrarAtuarComo(): Promise<void> {
 }
 
 export async function verifyAdminSession(): Promise<SessionPayload | null> {
-  const session = await getSession();
+  const session = await obterSessaoReal();
   if (!session) return null;
 
   const isAdmin =

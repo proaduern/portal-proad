@@ -397,6 +397,47 @@ export default function AdminPage() {
     }
   };
 
+  // Atuar como usuário real ativo
+  const handleAtuarComo = async (u: Usuario) => {
+    if (u.status !== 'ATIVO') {
+      alert(`Não é possível atuar como este usuário pois seu status é ${u.status}. Apenas usuários ATIVOS podem ser operados.`);
+      return;
+    }
+    const infoIdentidade =
+      u.tipoUsuario === 'SERVIDOR_UERN'
+        ? `Lotação: ${u.unidade?.sigla || 'Sem Unidade'} • Matrícula: ${u.matricula || '—'}`
+        : `Empresa: ${u.razaoSocial || u.nomeFantasia || 'Fornecedor'} • CNPJ: ${u.cnpjEmpresa || '—'}`;
+
+    if (
+      !confirm(
+        `Deseja atuar no sistema exatamente como "${u.nome}"?\n(${infoIdentidade})\n\nVocê navegará no Portal e subsistemas com a visão, contratos, DFDs e permissões deste usuário. Você pode retornar ao Administrador a qualquer momento na barra superior.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/atuar-como', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'USUARIO_REAL',
+          usuarioId: u.id,
+        }),
+      });
+
+      if (res.ok) {
+        router.push('/hub');
+        router.refresh();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Erro ao alternar para o perfil do usuário.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Erro de conexão.');
+    }
+  };
+
   const pendentes = usuarios.filter(
     (u) => u.status === 'PENDENTE_APROVACAO' || u.status === 'DEVOLVIDO_CORRECAO'
   );
@@ -894,6 +935,18 @@ export default function AdminPage() {
 
                         <td className="p-3.5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            {u.status === 'ATIVO' && (
+                              <button
+                                type="button"
+                                onClick={() => handleAtuarComo(u)}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition shadow-sm cursor-pointer"
+                                title={`Atuar no sistema como ${u.nome}`}
+                              >
+                                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Atuar Como</span>
+                              </button>
+                            )}
+
                             {u.status === 'PENDENTE_APROVACAO' || u.status === 'DEVOLVIDO_CORRECAO' ? (
                               <button
                                 type="button"
