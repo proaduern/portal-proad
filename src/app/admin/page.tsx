@@ -1211,9 +1211,9 @@ export default function AdminPage() {
       {/* MODAL: HOMOLOGAÇÃO DE USUÁRIO PENDENTE                   */}
       {/* ======================================================== */}
       {modalHomologar && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-white/15 rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-8">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+          <div className="bg-slate-900 border border-white/15 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/10 p-5 shrink-0 bg-slate-900/90">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
                   <ShieldCheck className="w-5 h-5" />
@@ -1232,7 +1232,8 @@ export default function AdminPage() {
               </button>
             </div>
 
-            {/* Instrução e Dica de Governança */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* Instrução e Dica de Governança */}
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200 flex items-start gap-2.5 mb-4">
               <Sliders className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
               <div>
@@ -1733,8 +1734,10 @@ export default function AdminPage() {
               </div>
             )}
 
+            </div>
+
             {/* Ações do Modal */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-white/10">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-white/10 bg-slate-950/90 shrink-0">
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
@@ -1918,19 +1921,20 @@ export default function AdminPage() {
       {/* MODAL: CRIAR / EDITAR USUÁRIO MANUAL                     */}
       {/* ======================================================== */}
       {modalUsuario.open && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-white/15 rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-8">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+          <div className="bg-slate-900 border border-white/15 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 shrink-0 bg-slate-900/90">
               <h3 className="text-base font-bold text-white">
                 {modalUsuario.modo === 'CRIAR' ? 'Cadastrar Usuário Manualmente' : `Editar: ${usuarioForm.nome}`}
               </h3>
-              <button onClick={() => setModalUsuario({ open: false, modo: 'CRIAR' })}>
-                <X className="w-5 h-5 text-slate-400" />
+              <button onClick={() => setModalUsuario({ open: false, modo: 'CRIAR' })} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSalvarUsuario} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleSalvarUsuario} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1">Tipo de Usuário *</label>
                   <select
@@ -2384,24 +2388,25 @@ export default function AdminPage() {
                   )}
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setModalUsuario({ open: false, modo: 'CRIAR' })}
-                  className="px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-xs text-slate-300 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submetendo}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition"
-                >
-                  {submetendo ? 'Salvando...' : 'Salvar Usuário'}
-                </button>
-              </div>
-            </form>
+            <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-white/10 bg-slate-950/90 shrink-0">
+              <button
+                type="button"
+                onClick={() => setModalUsuario({ open: false, modo: 'CRIAR' })}
+                className="px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-xs text-slate-300 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={submetendo}
+                className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-amber-500/20"
+              >
+                {submetendo ? 'Salvando...' : 'Salvar Usuário'}
+              </button>
+            </div>
+          </form>
           </div>
         </div>
       )}
