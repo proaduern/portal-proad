@@ -97,13 +97,13 @@ const OPCOES_PERFIL_PCA = [
   { value: 'AGENTE_CONTRATACAO', label: 'AGENTE_CONTRATACAO — Agente de Contratação (Edital, Certame e Homologação)', badge: 'Sub 05 • Licitação' },
   { value: 'LICITACOES', label: 'LICITACOES — Setor de Licitações e Contratos (Minutas e Fase Jurídica)', badge: 'Sub 05 • Licitação' },
   { value: 'GESTOR_ATA', label: 'GESTOR_ATA — Setor de Gestão de Atas de Registro de Preços (ARP)', badge: 'Sub 05 • Atas' },
-  { value: 'EXECUCAO', label: 'EXECUCAO — Execução de Compras e Contratações (Solicitação ao Fornecedor)', badge: 'Execução' },
-  { value: 'ENTREGA', label: 'ENTREGA — Conferência e Entrega de Bens (Patrimônio / Almoxarifado)', badge: 'Entrega' },
+  { value: 'EXECUCAO', label: 'EXECUCAO — (Legado) Execução de Compras — Operada via Gestores/Fiscais no SGC', badge: 'Legado SGC' },
+  { value: 'ENTREGA', label: 'ENTREGA — (Legado) Conferência e Entrega — Operada via Almoxarifado/Patrimônio/Fiscais no SGC', badge: 'Legado SGC' },
   { value: 'ADMIN', label: 'ADMIN — Administrador Geral PROAD (Acesso Total a Todos os Subsistemas)', badge: 'Admin Geral' },
 ];
 
 const OPCOES_PERFIL_SGC_SERVIDOR = [
-  { value: 'USUARIO', label: 'USUARIO — Gestor / Fiscal (Definido por Contrato no SGC)' },
+  { value: 'USUARIO', label: 'USUARIO — Gestor / Fiscal de Contratos e Empenhos (Execução, Emissão de OC/OS e Recebimento Provisório/Definitivo de Bens)' },
   { value: 'GESTOR_ATA', label: 'GESTOR_ATA — Gestor de Atas de Registro de Preços (ARP)' },
   { value: 'ADMIN_PROAD', label: 'ADMIN_PROAD — Administrador Geral PROAD' },
 ];
