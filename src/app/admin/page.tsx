@@ -31,6 +31,7 @@ import {
   Wind,
   History,
   LogOut,
+  HardDriveDownload,
 } from 'lucide-react';
 import {
   validarCpf,
@@ -545,6 +546,15 @@ export default function AdminPage() {
           <div className="flex items-center gap-2.5">
             <button
               type="button"
+              onClick={() => router.push('/admin/backup')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-sm transition"
+              title="Acessar Central de Backup Integral (.XLSX, .DOCX, .JSON) e Concorrência"
+            >
+              <HardDriveDownload className="w-3.5 h-3.5" />
+              <span>Central de Backup</span>
+            </button>
+            <button
+              type="button"
               onClick={() => router.push('/admin/auditoria')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-sm transition"
               title="Acessar painel central de logs e auditoria"
@@ -698,6 +708,15 @@ export default function AdminPage() {
           >
             <History className="w-4 h-4 text-indigo-400" />
             <span>Auditoria & Logs Centrais</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push('/admin/backup')}
+            className="flex-1 py-2.5 px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition text-emerald-300 hover:text-white hover:bg-emerald-500/10"
+          >
+            <HardDriveDownload className="w-4 h-4 text-emerald-400" />
+            <span>Backup & Contingência (.XLSX / .DOCX)</span>
           </button>
         </div>
 

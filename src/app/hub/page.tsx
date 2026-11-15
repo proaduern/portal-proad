@@ -24,6 +24,7 @@ import {
   Award,
   TrendingUp,
   BarChart3,
+  HardDriveDownload,
 } from 'lucide-react';
 import Link from 'next/link';
 import BarraImpersonacaoAdmin from '@/components/BarraImpersonacaoAdmin';
@@ -301,16 +302,27 @@ export default function HubPage() {
               <span className="hidden sm:inline">Hub Treinamento</span>
             </Link>
 
-            {/* Botão de Painel de Governança para Administradores */}
+            {/* Botão de Painel de Governança e Backup para Administradores */}
             {user?.isAdminGeral && (
-              <button
-                type="button"
-                onClick={() => router.push('/admin')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/40 text-blue-300 text-xs font-semibold transition shadow-sm"
-              >
-                <Settings className="w-4 h-4" />
-                <span>Painel PROAD</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => router.push('/admin/backup')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-semibold transition shadow-sm"
+                  title="Central de Backup Integral (.XLSX, .DOCX, .JSON) e Concorrência"
+                >
+                  <HardDriveDownload className="w-4 h-4" />
+                  <span className="hidden sm:inline">Backup Geral</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/admin')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/40 text-blue-300 text-xs font-semibold transition shadow-sm"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Painel PROAD</span>
+                </button>
+              </>
             )}
 
             {/* Logout */}
