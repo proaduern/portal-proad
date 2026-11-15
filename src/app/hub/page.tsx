@@ -57,7 +57,7 @@ function getRolesForSubsistema(
 
   if (target === 'PCA') {
     return roles.filter((r) =>
-      ['UNIDADE', 'DEMANDANTE', 'DIRETOR_UNIDADE', 'SETOR_INTERNO', 'SERVIDOR_UNIDADE', 'PCA', 'EXECUCAO', 'ENTREGA'].includes(r)
+      ['UNIDADE', 'DEMANDANTE', 'DIRETOR_UNIDADE', 'SETOR_INTERNO', 'SERVIDOR_UNIDADE', 'PCA'].includes(r)
     );
   } else if (target === 'ETP_RISCOS') {
     return roles.some((r) => ['SETOR_TECNICO', 'ETP', 'ETP_RISCOS'].includes(r))

@@ -56,8 +56,6 @@ function hasSubsistemaAccess(
         'SETOR_INTERNO',
         'SERVIDOR_UNIDADE',
         'PCA',
-        'EXECUCAO',
-        'ENTREGA',
       ].includes(r)
     );
     if (match) return match;
