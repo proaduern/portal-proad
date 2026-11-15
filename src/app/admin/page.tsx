@@ -101,12 +101,14 @@ const OPCOES_PERFIL_PCA = [
 ];
 
 const OPCOES_PERFIL_SGC_SERVIDOR = [
-  { value: 'FISCAL_TECNICO', label: 'FISCAL_TECNICO — Fiscal Técnico (Patrimônio/Almoxarifado, Remessa ao Fornecedor e Recebimento de Bens)' },
-  { value: 'FISCAL_ADM', label: 'FISCAL_ADM — Fiscal Administrativo (Instrução da Despesa e Emissão de Ordem de Compra/Serviço)' },
-  { value: 'GESTOR', label: 'GESTOR — Gestor de Contrato (Emissão de OC/OS, Recebimento Definitivo e Atesto)' },
-  { value: 'USUARIO', label: 'USUARIO — Servidor / Gestor / Fiscal Geral de Contratos e Empenhos' },
+  { value: 'FISCAL_ADM', label: 'FISCAL_ADM — Fiscal Administrativo (Serviços e Bens: Instrução de Despesa, Conta Vinculada, Encargos, OS e OC)' },
+  { value: 'FISCAL_TECNICO', label: 'FISCAL_TECNICO — Fiscal Técnico (Serviços e Bens: Execução Técnica, Medições, Ocorrências, Remessa e Recebimento de Bens)' },
+  { value: 'GESTOR', label: 'GESTOR — Gestor de Contrato (Serviços e Bens: Gestão Geral, Emissão de Ordens e Atesto Definitivo)' },
+  { value: 'SUPLENTE', label: 'SUPLENTE — Suplente do Gestor (Serviços e Bens: Apoio e Substituição do Gestor)' },
+  { value: 'FISCAL_SETORIAL', label: 'FISCAL_SETORIAL — Fiscal Setorial (Serviços e Bens: Acompanhamento Local nas Unidades e Campi)' },
   { value: 'GESTOR_ATA', label: 'GESTOR_ATA — Gestor de Atas de Registro de Preços (ARP)' },
-  { value: 'ADMIN_PROAD', label: 'ADMIN_PROAD — Administrador Geral PROAD' },
+  { value: 'ADMIN_PROAD', label: 'ADMIN_PROAD — Administrador Geral PROAD (Acesso Irrestrito)' },
+  { value: 'USUARIO', label: 'USUARIO — Servidor / Consulta Geral' },
 ];
 
 const OPCOES_PERFIL_MANUT_SERVIDOR = [
