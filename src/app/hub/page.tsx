@@ -25,6 +25,7 @@ import {
   TrendingUp,
   BarChart3,
   HardDriveDownload,
+  Package,
 } from 'lucide-react';
 import Link from 'next/link';
 import BarraImpersonacaoAdmin from '@/components/BarraImpersonacaoAdmin';
@@ -238,6 +239,7 @@ export default function HubPage() {
   const hasAccessManut = Boolean(user?.perfilManut || isAdmin);
   const hasAccessDiarias = Boolean(user?.perfilDiarias || isAdmin);
   const hasAccessClima = Boolean(user?.perfilClimatizacao || isAdmin);
+  const hasAccessPatrimonio = Boolean(isAdmin || user?.tipoUsuario === 'SERVIDOR_UERN');
 
   const totalSistemasAcessiveis = [
     hasAccessPca,
@@ -249,6 +251,7 @@ export default function HubPage() {
     hasAccessClima,
     hasAccessManut,
     hasAccessDiarias,
+    hasAccessPatrimonio,
   ].filter(Boolean).length;
 
   return (
@@ -963,6 +966,47 @@ export default function HubPage() {
                       </span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Subsistema 08: Controle de Estoque e Entregas (Patrimônio & Almoxarifado / DMP) */}
+              {hasAccessPatrimonio && (
+                <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-amber-500/40 p-6 transition flex flex-col justify-between shadow-lg relative group">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-amber-600/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                        <Package className="w-6 h-6" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md">
+                          Subsistema 08 • DMP &amp; Patrimônio
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
+                          SPAT • Almoxarifado Central
+                        </span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white group-hover:text-amber-400 transition">
+                      Controle de Estoque e Entregas
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      Controle central de bens patrimoniais permanentes (PROAD, OP e Convênios), acompanhamento de ordens de compra e prazos de entrega de fornecedores, e emissão de Termos de Transferência e Guias de Movimentação para todos os campi.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                    <div className="text-[11px] text-slate-400 font-mono">
+                      <span className="text-amber-400 font-bold">154</span> bens • <span className="text-cyan-400 font-bold">16</span> aquisições
+                    </div>
+                    <Link
+                      href="/estoque-patrimonio"
+                      className="px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition active:scale-95 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:from-amber-400 hover:to-amber-500"
+                    >
+                      <span>Acessar Estoque &amp; Entregas</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
                   </div>
                 </div>
               )}
