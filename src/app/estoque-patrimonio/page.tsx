@@ -44,6 +44,28 @@ import {
   ProcessoAquisicao,
 } from '@/data/patrimonioData';
 
+function toIsoDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const [d, m, y] = parts;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+  return '';
+}
+
+function toBrDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+  }
+  return dateStr;
+}
+
 type TabTipo =
   | 'BENS_PROAD'
   | 'BENS_OP'
@@ -410,11 +432,11 @@ export default function EstoquePatrimonioPage() {
 
           <div className="p-4 rounded-2xl bg-slate-900/80 border border-white/10 shadow-sm">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold mb-1">
-              <span>Saldo em Almoxarifado</span>
+              <span>Saldo em Depósito (SPAT)</span>
               <Layers className="w-4 h-4 text-cyan-400" />
             </div>
             <div className="text-2xl font-black text-cyan-400">{saldoTotalPecas}</div>
-            <div className="text-[11px] text-slate-400 mt-1">unidades disponíveis</div>
+            <div className="text-[11px] text-slate-400 mt-1">unidades aguardando entrega</div>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-900/80 border border-white/10 shadow-sm">
@@ -723,11 +745,19 @@ export default function EstoquePatrimonioPage() {
                                   title="Clique para ver detalhes do Termo de Transferência e Guia de Movimentação"
                                 >
                                   <div>
-                                    <span className="font-mono font-bold text-amber-300">{lib.processo}</span>
-                                    <span className="ml-1 text-slate-400">({lib.quantidade} unds)</span>
-                                    <div className="text-[9px] text-slate-400 truncate max-w-[150px]">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-mono font-bold text-amber-300">{lib.processo}</span>
+                                      <span className="text-slate-400">({lib.quantidade} unds)</span>
+                                    </div>
+                                    <div className="text-[9px] text-slate-400 truncate max-w-[170px]">
                                       {lib.destino}
                                     </div>
+                                    {lib.dataEntrega && (
+                                      <div className="text-[9px] text-emerald-400 font-semibold mt-0.5 flex items-center gap-1">
+                                        <span>Entregue em: {toBrDate(lib.dataEntrega)}</span>
+                                        {lib.recebidoPor && <span className="text-slate-400 font-normal">({lib.recebidoPor})</span>}
+                                      </div>
+                                    )}
                                   </div>
                                   <ChevronRight className="w-3 h-3 text-slate-500 group-hover/btn:text-white shrink-0" />
                                 </button>
@@ -1125,11 +1155,11 @@ export default function EstoquePatrimonioPage() {
                   </label>
                   <input
                     type="date"
-                    value={liberacaoSelecionada.lib.dataEntrega || ''}
+                    value={toIsoDate(liberacaoSelecionada.lib.dataEntrega)}
                     onChange={(e) =>
                       setLiberacaoSelecionada({
                         ...liberacaoSelecionada,
-                        lib: { ...liberacaoSelecionada.lib, dataEntrega: e.target.value },
+                        lib: { ...liberacaoSelecionada.lib, dataEntrega: toBrDate(e.target.value) },
                       })
                     }
                     className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500"
@@ -1286,9 +1316,9 @@ export default function EstoquePatrimonioPage() {
                   </label>
                   <input
                     type="date"
-                    value={formNovaLiberacao.dataEntrega}
+                    value={toIsoDate(formNovaLiberacao.dataEntrega)}
                     onChange={(e) =>
-                      setFormNovaLiberacao({ ...formNovaLiberacao, dataEntrega: e.target.value })
+                      setFormNovaLiberacao({ ...formNovaLiberacao, dataEntrega: toBrDate(e.target.value) })
                     }
                     className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500"
                   />
