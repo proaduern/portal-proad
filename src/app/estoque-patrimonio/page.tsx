@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Package,
@@ -32,6 +32,8 @@ import {
   DollarSign,
   Tag,
   Share2,
+  ShieldCheck,
+  Lock,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import {
@@ -76,9 +78,54 @@ type TabTipo =
   | 'CAMPUS_ANALYTICS';
 
 export default function EstoquePatrimonioPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
   const [activeTab, setActiveTab] = useState<TabTipo>('BENS_PROAD');
   const [itens, setItens] = useState<ItemPatrimonio[]>(ITENS_PATRIMONIO_INICIAIS);
   const [processosAquisicao] = useState<ProcessoAquisicao[]>(PROCESSOS_AQUISICAO_INICIAIS);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          setCurrentUser(data.user);
+          const p = data.user.perfilPatrimonio || '';
+          const isOnlyAlmox =
+            p.includes('RESPONSAVEL_ALMOXARIFADO') &&
+            !p.includes('ADMIN_PATRIMONIO') &&
+            !p.includes('ADMIN_GERAL') &&
+            !data.user.isAdminGeral;
+          if (isOnlyAlmox) {
+            setActiveTab('CONSUMO');
+          }
+        }
+      })
+      .catch((err) => console.error('Erro ao verificar autenticação:', err))
+      .finally(() => setLoadingAuth(false));
+  }, []);
+
+  const isAdminGeral = Boolean(
+    currentUser?.isAdminGeral ||
+    currentUser?.perfilPatrimonio?.includes('ADMIN_GERAL') ||
+    currentUser?.perfilSgc?.includes('ADMIN_PROAD') ||
+    currentUser?.perfilPca?.includes('ADMIN') ||
+    currentUser?.email === 'adj.proad@uern.br' ||
+    currentUser?.email === 'pedroreboucas@uern.br'
+  );
+
+  const isPatrimonio = Boolean(
+    currentUser?.perfilPatrimonio?.includes('ADMIN_PATRIMONIO')
+  );
+
+  const isAlmoxarifado = Boolean(
+    currentUser?.perfilPatrimonio?.includes('RESPONSAVEL_ALMOXARIFADO')
+  );
+
+  const hasAcessoPatrimonio = isAdminGeral || isPatrimonio;
+  const hasAcessoAlmoxarifado = isAdminGeral || isAlmoxarifado;
+  const hasAcessoGeral = isAdminGeral || isPatrimonio || isAlmoxarifado;
 
   // Filtros de busca
   const [busca, setBusca] = useState('');
@@ -359,6 +406,32 @@ export default function EstoquePatrimonioPage() {
     return Object.values(mapa).sort((a, b) => b.totalItens - a.totalItens);
   }, [itens]);
 
+  if (!loadingAuth && !hasAcessoGeral) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-6 font-sans">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-slate-900 border border-red-500/30 text-center space-y-4 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mx-auto">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Acesso Restrito ao Setor de Patrimônio e Almoxarifado</h2>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Seu usuário não possui permissão concedida pelo Administrador Geral da PROAD para acessar o subsistema de estoque, patrimônio e almoxarifado.
+            Entre em contato com a Diretoria do Setor de Patrimônio (SPAT) ou com a administração da PROAD para solicitar a habilitação do seu perfil.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/hub"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Voltar ao Hub de Subsistemas</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       {/* Top Header */}
@@ -394,6 +467,26 @@ export default function EstoquePatrimonioPage() {
           </div>
 
           <div className="flex items-center gap-2.5">
+            {currentUser && (
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-white/10 text-xs">
+                <ShieldCheck className="w-4 h-4 text-amber-400" />
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Perfil Concedido</span>
+                  <span className="font-bold text-amber-300 text-[11px]">
+                    {isAdminGeral
+                      ? 'Administrador Geral (Acesso Irrestrito)'
+                      : isPatrimonio && isAlmoxarifado
+                      ? 'Patrimônio & Almoxarifado'
+                      : isPatrimonio
+                      ? 'Administrador de Patrimônio (SPAT)'
+                      : isAlmoxarifado
+                      ? 'Responsável pelo Almoxarifado (DMP)'
+                      : 'Servidor UERN'}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <a
               href="https://controle-interno-patrimonio.firebaseapp.com/"
               target="_blank"
@@ -405,14 +498,36 @@ export default function EstoquePatrimonioPage() {
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
 
-            <button
-              type="button"
-              onClick={() => setModalNovoItemAberto(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Novo Bem</span>
-            </button>
+            {((activeTab === 'CONSUMO' && hasAcessoAlmoxarifado) || (activeTab !== 'CONSUMO' && hasAcessoPatrimonio)) ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setFormNovoItem((prev) => ({
+                    ...prev,
+                    origem: activeTab === 'CONSUMO' ? 'CONSUMO' : activeTab === 'BENS_OP' ? 'OP_CONVENIOS' : 'PROAD',
+                  }));
+                  setModalNovoItemAberto(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{activeTab === 'CONSUMO' ? 'Novo Material' : 'Novo Bem'}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-500 text-xs font-semibold cursor-not-allowed opacity-60"
+                title={
+                  activeTab === 'CONSUMO'
+                    ? 'Inclusão de bens de consumo restrita ao Responsável pelo Almoxarifado'
+                    : 'Inclusão de bens patrimoniais restrita ao Administrador de Patrimônio'
+                }
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>{activeTab === 'CONSUMO' ? 'Novo Material' : 'Novo Bem'}</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -767,41 +882,66 @@ export default function EstoquePatrimonioPage() {
                         </td>
                         <td className="p-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            {it.saldo > 0 && !it.arquivado && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setItemParaLiberar(it);
-                                  setFormNovaLiberacao({
-                                    processo: '',
-                                    destino: it.destinoInicial,
-                                    quantidade: 1,
-                                    termoTransferencia: '',
-                                    guiaMovimentacao: '',
-                                    dataEntrega: new Date().toISOString().slice(0, 10),
-                                    recebidoPor: '',
-                                  });
-                                  setModalNovaLiberacaoAberta(true);
-                                }}
-                                className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-bold text-[11px] transition"
-                              >
-                                Liberar
-                              </button>
-                            )}
+                            {(() => {
+                              const canActionThisItem =
+                                isAdminGeral ||
+                                (it.origem === 'CONSUMO' ? isAlmoxarifado : isPatrimonio);
 
-                            {/* BOTÃO MANTIDO CONFORME PEDIDO DO USUÁRIO: "Mantenha esse botão para processo concluído, por ora." */}
-                            <button
-                              type="button"
-                              onClick={() => handleToggleArquivado(it.id)}
-                              className={`px-2 py-1 rounded-lg text-[10px] font-bold transition border ${
-                                it.arquivado
-                                  ? 'bg-purple-500/15 text-purple-300 border-purple-500/40 hover:bg-purple-500/25'
-                                  : 'bg-slate-800 text-slate-300 border-white/10 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/40'
-                              }`}
-                              title={it.arquivado ? 'Desarquivar e retornar ao estoque ativo' : 'Marcar como Processo Concluído'}
-                            >
-                              {it.arquivado ? 'Desarquivar' : 'Concluir'}
-                            </button>
+                              if (!canActionThisItem) {
+                                return (
+                                  <span
+                                    className="px-2 py-0.5 rounded text-[10px] text-slate-500 bg-slate-800/40 border border-white/5 cursor-not-allowed"
+                                    title={
+                                      it.origem === 'CONSUMO'
+                                        ? 'Baixas e entregas de consumo restritas ao Responsável pelo Almoxarifado'
+                                        : 'Liberações de bens patrimoniais restritas ao Administrador de Patrimônio'
+                                    }
+                                  >
+                                    Apenas Leitura
+                                  </span>
+                                );
+                              }
+
+                              return (
+                                <>
+                                  {it.saldo > 0 && !it.arquivado && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setItemParaLiberar(it);
+                                        setFormNovaLiberacao({
+                                          processo: '',
+                                          destino: it.destinoInicial,
+                                          quantidade: 1,
+                                          termoTransferencia: '',
+                                          guiaMovimentacao: '',
+                                          dataEntrega: new Date().toISOString().slice(0, 10),
+                                          recebidoPor: '',
+                                        });
+                                        setModalNovaLiberacaoAberta(true);
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-bold text-[11px] transition"
+                                    >
+                                      {it.origem === 'CONSUMO' ? 'Entregar / Baixa' : 'Liberar'}
+                                    </button>
+                                  )}
+
+                                  {/* BOTÃO MANTIDO CONFORME PEDIDO DO USUÁRIO: "Mantenha esse botão para processo concluído, por ora." */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleArquivado(it.id)}
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition border ${
+                                      it.arquivado
+                                        ? 'bg-purple-500/15 text-purple-300 border-purple-500/40 hover:bg-purple-500/25'
+                                        : 'bg-slate-800 text-slate-300 border-white/10 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/40'
+                                    }`}
+                                    title={it.arquivado ? 'Desarquivar e retornar ao estoque ativo' : 'Marcar como Processo Concluído'}
+                                  >
+                                    {it.arquivado ? 'Desarquivar' : 'Concluir'}
+                                  </button>
+                                </>
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>
@@ -1394,9 +1534,15 @@ export default function EstoquePatrimonioPage() {
                     }
                     className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500"
                   >
-                    <option value="PROAD">Bens Patrimoniais da PROAD</option>
-                    <option value="OP_CONVENIOS">Bens de OP e Convênios</option>
-                    <option value="CONSUMO">Bens de Consumo</option>
+                    {(isAdminGeral || isPatrimonio) && (
+                      <>
+                        <option value="PROAD">Bens Patrimoniais da PROAD (Móveis/Permanentes)</option>
+                        <option value="OP_CONVENIOS">Bens de OP e Convênios (Permanentes)</option>
+                      </>
+                    )}
+                    {(isAdminGeral || isAlmoxarifado) && (
+                      <option value="CONSUMO">Bens de Consumo (Almoxarifado Central)</option>
+                    )}
                   </select>
                 </div>
                 <div>

@@ -111,6 +111,7 @@ interface UserData {
   perfilPca?: string | null;
   perfilDiarias?: string | null;
   perfilClimatizacao?: string | null;
+  perfilPatrimonio?: string | null;
   isAdminGeral: boolean;
 }
 
@@ -239,7 +240,33 @@ export default function HubPage() {
   const hasAccessManut = Boolean(user?.perfilManut || isAdmin);
   const hasAccessDiarias = Boolean(user?.perfilDiarias || isAdmin);
   const hasAccessClima = Boolean(user?.perfilClimatizacao || isAdmin);
-  const hasAccessPatrimonio = Boolean(isAdmin || user?.tipoUsuario === 'SERVIDOR_UERN');
+
+  const isPatrimonioAdminGeral = Boolean(
+    isAdmin ||
+    user?.perfilPatrimonio?.includes('ADMIN_GERAL') ||
+    user?.perfilSgc?.includes('ADMIN_PROAD') ||
+    user?.perfilPca?.includes('ADMIN')
+  );
+  const isPatrimonioGestor = Boolean(
+    user?.perfilPatrimonio?.includes('ADMIN_PATRIMONIO')
+  );
+  const isAlmoxarifadoGestor = Boolean(
+    user?.perfilPatrimonio?.includes('RESPONSAVEL_ALMOXARIFADO')
+  );
+  const hasAccessPatrimonio = Boolean(
+    isPatrimonioAdminGeral || isPatrimonioGestor || isAlmoxarifadoGestor
+  );
+
+  let patrimonioBadgeLabel = 'Acesso ao Setor';
+  if (isPatrimonioAdminGeral) {
+    patrimonioBadgeLabel = 'Acesso Irrestrito • Admin Geral';
+  } else if (isPatrimonioGestor && isAlmoxarifadoGestor) {
+    patrimonioBadgeLabel = 'Patrimônio & Almoxarifado';
+  } else if (isPatrimonioGestor) {
+    patrimonioBadgeLabel = 'Patrimônio (Bens Móveis)';
+  } else if (isAlmoxarifadoGestor) {
+    patrimonioBadgeLabel = 'Almoxarifado (Consumo)';
+  }
 
   const totalSistemasAcessiveis = [
     hasAccessPca,
@@ -983,7 +1010,7 @@ export default function HubPage() {
                           Subsistema 08 • DMP &amp; Patrimônio
                         </span>
                         <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
-                          SPAT • Almoxarifado Central
+                          {patrimonioBadgeLabel}
                         </span>
                       </div>
                     </div>
@@ -992,7 +1019,7 @@ export default function HubPage() {
                       Controle de Estoque e Entregas
                     </h4>
                     <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                      Controle central de bens patrimoniais permanentes (PROAD, OP e Convênios), acompanhamento de ordens de compra e prazos de entrega de fornecedores, e emissão de Termos de Transferência e Guias de Movimentação para todos os campi.
+                      Gestão de bens móveis e permanentes (SPAT), controle de materiais e bens de consumo (Almoxarifado DMP), acompanhamento de ordens de compra e prazos de entrega, com emissão de Termos de Transferência e Guias de Movimentação.
                     </p>
                   </div>
 

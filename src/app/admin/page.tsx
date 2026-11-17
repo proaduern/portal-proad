@@ -32,6 +32,7 @@ import {
   History,
   LogOut,
   HardDriveDownload,
+  Package,
 } from 'lucide-react';
 import {
   validarCpf,
@@ -82,6 +83,7 @@ interface Usuario {
   permissoesPca?: any | null;
   perfilDiarias?: string | null;
   perfilClimatizacao?: string | null;
+  perfilPatrimonio?: string | null;
   criadoEm: string;
   motivoBloqueio?: string | null;
   motivoDevolucao?: string | null;
@@ -135,6 +137,27 @@ const OPCOES_PERFIL_CLIMATIZACAO_SERVIDOR = [
   { value: 'FISCAL_ADM', label: 'FISCAL_ADM — Fiscal Administrativo de Climatização' },
   { value: 'GESTOR', label: 'GESTOR — Gestor de Contrato de Climatização' },
   { value: 'ADMIN', label: 'ADMIN — Administrador Geral de Climatização (PROAD)' },
+];
+
+const OPCOES_PERFIL_PATRIMONIO_SERVIDOR = [
+  {
+    value: 'ADMIN_GERAL',
+    label: 'Administrador Geral (Acesso Irrestrito)',
+    badge: 'Acesso Irrestrito',
+    desc: 'Acesso pleno a todos os bens permanentes e bens de consumo, configurações e relatórios globais',
+  },
+  {
+    value: 'ADMIN_PATRIMONIO',
+    label: 'Administrador de Patrimônio (Bens Móveis/Permanentes, Liberações, Entregas de bens permanentes e Relatórios)',
+    badge: 'Patrimônio / SPAT',
+    desc: 'Gestão de bens permanentes, estoque SPAT, liberações de tombamentos, termos de entrega e relatórios patrimoniais',
+  },
+  {
+    value: 'RESPONSAVEL_ALMOXARIFADO',
+    label: 'Responsável pelo Almoxarifado (Bens de Consumo, Entregas de bens de consumo e relatórios)',
+    badge: 'Almoxarifado / DMP',
+    desc: 'Gestão de bens e materiais de consumo, estoque de almoxarifado, baixas, entregas e relatórios de consumo',
+  },
 ];
 
 function parsePerfisList(raw: string | null | undefined): string[] {
@@ -194,6 +217,7 @@ export default function AdminPage() {
   });
   const [homologarDiarias, setHomologarDiarias] = useState('');
   const [homologarClimatizacao, setHomologarClimatizacao] = useState('');
+  const [homologarPatrimonio, setHomologarPatrimonio] = useState('');
   const [homologarUnidadeId, setHomologarUnidadeId] = useState('');
   const [homologarNome, setHomologarNome] = useState('');
   const [homologarCpf, setHomologarCpf] = useState('');
@@ -239,6 +263,7 @@ export default function AdminPage() {
     } as any,
     perfilDiarias: '',
     perfilClimatizacao: '',
+    perfilPatrimonio: '',
     status: 'ATIVO' as 'ATIVO' | 'BLOQUEADO' | 'PENDENTE_APROVACAO' | 'DEVOLVIDO_CORRECAO',
     motivoBloqueio: '',
   });
@@ -305,12 +330,14 @@ export default function AdminPage() {
       setHomologarPca(u.perfilPca || 'UNIDADE');
       setHomologarDiarias(u.perfilDiarias || 'DEMANDANTE');
       setHomologarClimatizacao(u.perfilClimatizacao || 'DEMANDANTE');
+      setHomologarPatrimonio(u.perfilPatrimonio || '');
     } else {
       setHomologarSgc(u.perfilSgc || 'FORNECEDOR');
       setHomologarManut(u.perfilManut || 'EMPRESA');
       setHomologarPca('');
       setHomologarDiarias('');
       setHomologarClimatizacao(u.perfilClimatizacao || 'EMPRESA');
+      setHomologarPatrimonio('');
     }
   };
 
@@ -346,6 +373,7 @@ export default function AdminPage() {
           payload.permissoesPca = homologarPca ? homologarPcaPerms : null;
           payload.perfilDiarias = homologarDiarias || null;
           payload.perfilClimatizacao = homologarClimatizacao || null;
+          payload.perfilPatrimonio = homologarPatrimonio || null;
         }
       }
 
@@ -880,6 +908,7 @@ export default function AdminPage() {
                     },
                     perfilDiarias: 'DEMANDANTE',
                     perfilClimatizacao: 'DEMANDANTE',
+                    perfilPatrimonio: '',
                     status: 'ATIVO',
                     motivoBloqueio: '',
                   });
@@ -1014,7 +1043,19 @@ export default function AdminPage() {
                                 Clima: {p}
                               </span>
                             ))}
-                            {!u.perfilSgc && !u.perfilManut && !u.perfilPca && !u.perfilDiarias && !u.perfilClimatizacao && (
+                            {parsePerfisList(u.perfilPatrimonio).map((p) => {
+                              const opt = OPCOES_PERFIL_PATRIMONIO_SERVIDOR.find((o) => o.value === p);
+                              return (
+                                <span
+                                  key={`pat-${p}`}
+                                  className="px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-500/40 text-[10px] font-semibold"
+                                  title={opt?.label || p}
+                                >
+                                  Patrimônio: {opt?.badge || p}
+                                </span>
+                              );
+                            })}
+                            {!u.perfilSgc && !u.perfilManut && !u.perfilPca && !u.perfilDiarias && !u.perfilClimatizacao && !u.perfilPatrimonio && (
                               <span className="text-slate-500 text-[10px]">Nenhum perfil ativo</span>
                             )}
                           </div>
@@ -1090,6 +1131,7 @@ export default function AdminPage() {
                                     },
                                     perfilDiarias: u.perfilDiarias || '',
                                     perfilClimatizacao: u.perfilClimatizacao || '',
+                                    perfilPatrimonio: u.perfilPatrimonio || '',
                                     status: u.status,
                                     motivoBloqueio: u.motivoBloqueio || '',
                                   });
@@ -1708,6 +1750,57 @@ export default function AdminPage() {
                   </select>
                 )}
               </div>
+
+              {/* 6. Subsistema 08: Controle de Estoque, Patrimônio & Almoxarifado (DMP) */}
+              {modalHomologar.tipoUsuario === 'SERVIDOR_UERN' && (
+                <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                      <Package className="w-3.5 h-3.5" /> Subsistema 08 • Controle de Estoque, Patrimônio &amp; Almoxarifado (DMP)
+                    </span>
+                    {homologarPatrimonio && (
+                      <button
+                        type="button"
+                        onClick={() => setHomologarPatrimonio('')}
+                        className="text-[10px] text-slate-400 hover:text-red-300 underline"
+                      >
+                        Limpar Patrimônio
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mb-2">
+                    Selecione os perfis de acesso deste servidor ao setor de Patrimônio e Almoxarifado (múltipla escolha permitida):
+                  </p>
+                  <div className="space-y-2">
+                    {OPCOES_PERFIL_PATRIMONIO_SERVIDOR.map((opt) => {
+                      const checked = parsePerfisList(homologarPatrimonio).includes(opt.value);
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer transition ${
+                            checked
+                              ? 'bg-amber-500/15 border-amber-500/50 text-amber-100 font-semibold'
+                              : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setHomologarPatrimonio(togglePerfilInString(homologarPatrimonio, opt.value))
+                            }
+                            className="accent-amber-500 rounded mt-0.5"
+                          />
+                          <div className="flex-1">
+                            <span className="leading-snug block">{opt.label}</span>
+                            <span className="text-[10px] text-slate-400 font-normal block mt-0.5">{opt.desc}</span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Caixa de Devolução (quando acionado pelo Admin) */}
@@ -2409,6 +2502,63 @@ export default function AdminPage() {
                     </select>
                   )}
                 </div>
+
+                {/* 6. Subsistema 08: Controle de Estoque, Patrimônio & Almoxarifado (DMP) */}
+                {usuarioForm.tipoUsuario === 'SERVIDOR_UERN' && (
+                  <div className="p-3 rounded-xl bg-slate-950 border border-white/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                        <Package className="w-3.5 h-3.5" /> Subsistema 08 • Controle de Estoque, Patrimônio &amp; Almoxarifado (DMP)
+                      </span>
+                      {usuarioForm.perfilPatrimonio && (
+                        <button
+                          type="button"
+                          onClick={() => setUsuarioForm({ ...usuarioForm, perfilPatrimonio: '' })}
+                          className="text-[10px] text-slate-400 hover:text-red-300 underline"
+                        >
+                          Limpar Patrimônio
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400 mb-2">
+                      Defina os perfis de acesso para gestão de bens e estoque (seleção múltipla):
+                    </p>
+                    <div className="space-y-2">
+                      {OPCOES_PERFIL_PATRIMONIO_SERVIDOR.map((opt) => {
+                        const checked = parsePerfisList(usuarioForm.perfilPatrimonio).includes(opt.value);
+                        return (
+                          <label
+                            key={opt.value}
+                            className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer transition ${
+                              checked
+                                ? 'bg-amber-500/15 border-amber-500/50 text-amber-100 font-semibold'
+                                : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setUsuarioForm({
+                                  ...usuarioForm,
+                                  perfilPatrimonio: togglePerfilInString(
+                                    usuarioForm.perfilPatrimonio,
+                                    opt.value
+                                  ),
+                                })
+                              }
+                              className="accent-amber-500 rounded mt-0.5"
+                            />
+                            <div className="flex-1">
+                              <span className="leading-snug block">{opt.label}</span>
+                              <span className="text-[10px] text-slate-400 font-normal block mt-0.5">{opt.desc}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

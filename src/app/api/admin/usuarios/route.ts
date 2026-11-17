@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
       permissoesPca,
       perfilDiarias,
       perfilClimatizacao,
+      perfilPatrimonio,
       senha,
     } = body;
 
@@ -187,6 +188,7 @@ export async function POST(request: NextRequest) {
         permissoesPca: permissoesPca || null,
         perfilDiarias: perfilDiarias || null,
         perfilClimatizacao: perfilClimatizacao || null,
+        perfilPatrimonio: perfilPatrimonio || null,
         aprovadoEm: new Date(),
         aprovadoPor: admin.email,
       },

@@ -53,12 +53,14 @@ export async function GET() {
           perfilClimatizacao:
             (userDb as any).perfilClimatizacao ||
             (userDb.perfilSgc?.toUpperCase().includes('ADMIN_PROAD') || userDb.perfilManut?.toUpperCase().includes('ADMIN') ? 'ADMIN' : null),
+          perfilPatrimonio: userDb.perfilPatrimonio,
           motivoDevolucao: userDb.motivoDevolucao,
           dataDevolucao: userDb.dataDevolucao,
           isAdminGeral:
             Boolean(userDb.perfilSgc?.toUpperCase().includes('ADMIN_PROAD')) ||
             Boolean(userDb.perfilManut?.toUpperCase().includes('ADMIN')) ||
             Boolean(userDb.perfilPca?.toUpperCase().includes('ADMIN')) ||
+            Boolean(userDb.perfilPatrimonio?.toUpperCase().includes('ADMIN_GERAL')) ||
             Boolean((userDb as any).perfilClimatizacao?.toUpperCase().includes('ADMIN')),
         }
       : {
@@ -85,6 +87,7 @@ export async function GET() {
           permissoesPca: session.permissoesPca,
           perfilDiarias: session.perfilDiarias,
           perfilClimatizacao: session.perfilClimatizacao,
+          perfilPatrimonio: session.perfilPatrimonio,
           isAdminGeral: false,
         };
 

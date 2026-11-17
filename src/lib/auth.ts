@@ -32,6 +32,7 @@ export interface SessionPayload {
   permissoesPca?: any | null;
   perfilDiarias?: string | null;
   perfilClimatizacao?: string | null;
+  perfilPatrimonio?: string | null;
 }
 
 export async function hashPassword(pass: string): Promise<string> {
@@ -92,6 +93,7 @@ export async function getSession(): Promise<SessionPayload | null> {
       Boolean(realSession.perfilPca?.toUpperCase().includes('ADMIN')) ||
       Boolean(realSession.perfilDiarias?.toUpperCase().includes('ADMIN')) ||
       Boolean(realSession.perfilClimatizacao?.toUpperCase().includes('ADMIN')) ||
+      Boolean(realSession.perfilPatrimonio?.toUpperCase().includes('ADMIN_GERAL')) ||
       realSession.email === 'adj.proad@uern.br' ||
       realSession.email === 'pedroreboucas@uern.br';
 
@@ -121,6 +123,7 @@ export async function iniciarAtuarComo(payload: SessionPayload): Promise<void> {
       Boolean(realSession.perfilPca?.toUpperCase().includes('ADMIN')) ||
       realSession.perfilDiarias === 'ADMIN' ||
       realSession.perfilClimatizacao === 'ADMIN' ||
+      Boolean(realSession.perfilPatrimonio?.toUpperCase().includes('ADMIN_GERAL')) ||
       realSession.email === 'adj.proad@uern.br' ||
       realSession.email === 'pedroreboucas@uern.br');
 
@@ -154,6 +157,7 @@ export async function verifyAdminSession(): Promise<SessionPayload | null> {
     Boolean(session.perfilPca?.toUpperCase().includes('ADMIN')) ||
     session.perfilDiarias === 'ADMIN' ||
     session.perfilClimatizacao === 'ADMIN' ||
+    Boolean(session.perfilPatrimonio?.toUpperCase().includes('ADMIN_GERAL')) ||
     session.email === 'adj.proad@uern.br' ||
     session.email === 'pedroreboucas@uern.br';
 

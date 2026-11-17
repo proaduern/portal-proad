@@ -86,6 +86,7 @@ export async function PUT(
       permissoesPca,
       perfilDiarias,
       perfilClimatizacao,
+      perfilPatrimonio,
       novaSenha,
     } = body;
 
@@ -166,6 +167,7 @@ export async function PUT(
     if (permissoesPca !== undefined) dataToUpdate.permissoesPca = permissoesPca;
     if (perfilDiarias !== undefined) dataToUpdate.perfilDiarias = perfilDiarias || null;
     if (perfilClimatizacao !== undefined) dataToUpdate.perfilClimatizacao = perfilClimatizacao || null;
+    if (perfilPatrimonio !== undefined) dataToUpdate.perfilPatrimonio = perfilPatrimonio || null;
 
     // Redefinição de senha se fornecida
     if (novaSenha && novaSenha.trim().length >= 6) {
