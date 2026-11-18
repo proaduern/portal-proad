@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { setSessionCookie } from '@/lib/auth';
 import { validarEmailInstitucional, normalizarMatriculaUern } from '@/lib/validators';
+import {
+  getClientIp,
+  verificarBloqueioLogin,
+  registrarFalhaLogin,
+  limparTentativasLogin,
+} from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,9 +39,21 @@ export async function POST(request: NextRequest) {
     }
 
     const emailLimpo = email.trim().toLowerCase();
+    const ip = getClientIp(request);
+
+    const bloqueio = await verificarBloqueioLogin(emailLimpo, ip);
+    if (bloqueio.bloqueado) {
+      return NextResponse.json(
+        {
+          error: `Muitas tentativas de acesso. Por segurança, aguarde ${bloqueio.minutosRestantes} minuto(s) antes de tentar novamente.`,
+        },
+        { status: 429 }
+      );
+    }
 
     // 1. Validação estrita do domínio institucional @uern.br
     if (!validarEmailInstitucional(emailLimpo)) {
+      await registrarFalhaLogin(emailLimpo, ip);
       return NextResponse.json(
         {
           error: 'Acesso restrito: apenas contas institucionais com domínio @uern.br têm permissão de acesso ao Portal PROAD.',
@@ -44,6 +62,8 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
+
+    await limparTentativasLogin(emailLimpo, ip);
 
     // 2. Busca usuário no banco central
     const usuarioExistente = await prisma.usuarioCentral.findUnique({

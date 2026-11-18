@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { setSessionCookie } from '@/lib/auth';
+import { setSessionCookie, verifyAdminSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const admin = await verifyAdminSession();
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Não autorizado. Apenas administradores autenticados podem simular login de treinamento.' },
+        { status: 403 }
+      );
+    }
+
     const { email } = await request.json();
     if (!email) {
       return NextResponse.json({ error: 'E-mail é obrigatório.' }, { status: 400 });

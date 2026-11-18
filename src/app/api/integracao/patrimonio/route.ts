@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ITENS_PATRIMONIO_INICIAIS, PROCESSOS_AQUISICAO_INICIAIS } from '@/data/patrimonioData';
+import { getSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
+
+async function validarAcessoPatrimonio(request: NextRequest): Promise<boolean> {
+  const authHeader = request.headers.get('authorization');
+  const serviceKey = process.env.PROAD_SERVICE_KEY || 'proad_interop_internal_service_key_2026_uern';
+  if (authHeader && authHeader === `Bearer ${serviceKey}`) {
+    return true;
+  }
+  const session = await getSession();
+  return Boolean(session);
+}
 
 // GET: Retorna dados analíticos consolidados de estoque, liberações e processos de compra
 export async function GET(request: NextRequest) {
   try {
+    if (!(await validarAcessoPatrimonio(request))) {
+      return NextResponse.json({ error: 'Não autorizado. Sessão ou chave de serviço PROAD obrigatória.' }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const campus = searchParams.get('campus');
     const origem = searchParams.get('origem'); // PROAD, OP_CONVENIOS, CONSUMO
@@ -43,6 +57,9 @@ export async function GET(request: NextRequest) {
 // POST: Recebe eventos disparados pelo SGC (TRP, TRD ou Envio ao Demandante)
 export async function POST(request: NextRequest) {
   try {
+    if (!(await validarAcessoPatrimonio(request))) {
+      return NextResponse.json({ error: 'Não autorizado. Sessão ou chave de serviço PROAD obrigatória.' }, { status: 401 });
+    }
     const body = await request.json();
     const { tipoEvento, processoSei, itemDescricao, quantidade, destino, termoNumero, guiaNumero } = body;
 

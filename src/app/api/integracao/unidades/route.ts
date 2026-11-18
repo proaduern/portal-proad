@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    const serviceKey = process.env.PROAD_SERVICE_KEY || 'uern_proad_internal_service_key_2026';
+    const serviceKey = process.env.PROAD_SERVICE_KEY || 'proad_interop_internal_service_key_2026_uern';
 
-    // Se fornecido header de autenticação, valida
-    if (authHeader && authHeader !== `Bearer ${serviceKey}`) {
-      return NextResponse.json({ error: 'Chave de serviço PROAD inválida.' }, { status: 401 });
+    let autorizado = Boolean(authHeader && authHeader === `Bearer ${serviceKey}`);
+    if (!autorizado) {
+      const session = await getSession();
+      autorizado = Boolean(session);
+    }
+
+    if (!autorizado) {
+      return NextResponse.json({ error: 'Não autorizado. Chave de serviço PROAD ou sessão obrigatória.' }, { status: 401 });
     }
 
     const unidades = await prisma.unidadeCentral.findMany({

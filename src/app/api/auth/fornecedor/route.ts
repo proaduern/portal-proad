@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { setSessionCookie, hashPassword, verifyPassword } from '@/lib/auth';
 import { validarCnpj, validarCpf, formatarCnpj, formatarCpf } from '@/lib/validators';
+import {
+  getClientIp,
+  verificarBloqueioLogin,
+  registrarFalhaLogin,
+  limparTentativasLogin,
+} from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,18 +26,48 @@ export async function POST(request: NextRequest) {
       }
 
       const emailLimpo = email.trim().toLowerCase();
+      const ip = getClientIp(request);
+
+      const bloqueio = await verificarBloqueioLogin(emailLimpo, ip);
+      if (bloqueio.bloqueado) {
+        return NextResponse.json(
+          {
+            error: `Muitas tentativas falhas de acesso. Por segurança, aguarde ${bloqueio.minutosRestantes} minuto(s) antes de tentar novamente.`,
+          },
+          { status: 429 }
+        );
+      }
+
       const fornecedor = await prisma.usuarioCentral.findUnique({
         where: { email: emailLimpo },
       });
 
       if (!fornecedor || fornecedor.tipoUsuario !== 'FORNECEDOR_EXTERNO' || !fornecedor.senhaHash) {
-        return NextResponse.json({ error: 'Credenciais inválidas ou cadastro não localizado.' }, { status: 401 });
+        const resFalha = await registrarFalhaLogin(emailLimpo, ip);
+        return NextResponse.json(
+          {
+            error: resFalha.bloqueadoAgora
+              ? `Acesso bloqueado por ${resFalha.minutosBloqueio} minutos após 5 tentativas inválidas.`
+              : `Credenciais inválidas ou cadastro não localizado. (${resFalha.tentativasRestantes} tentativa(s) restante(s)).`,
+          },
+          { status: resFalha.bloqueadoAgora ? 429 : 401 }
+        );
       }
 
       const senhaValida = await verifyPassword(senha, fornecedor.senhaHash);
       if (!senhaValida) {
-        return NextResponse.json({ error: 'Credenciais inválidas. Verifique sua senha.' }, { status: 401 });
+        const resFalha = await registrarFalhaLogin(emailLimpo, ip);
+        return NextResponse.json(
+          {
+            error: resFalha.bloqueadoAgora
+              ? `Acesso bloqueado por ${resFalha.minutosBloqueio} minutos após 5 tentativas inválidas.`
+              : `Credenciais inválidas. Verifique sua senha. (${resFalha.tentativasRestantes} tentativa(s) restante(s)).`,
+          },
+          { status: resFalha.bloqueadoAgora ? 429 : 401 }
+        );
       }
+
+      await limparTentativasLogin(emailLimpo, ip);
 
       if (fornecedor.status === 'BLOQUEADO') {
         return NextResponse.json(

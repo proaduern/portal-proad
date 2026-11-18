@@ -36,7 +36,7 @@ export interface SessionPayload {
 }
 
 export async function hashPassword(pass: string): Promise<string> {
-  return bcrypt.hash(pass, 10);
+  return bcrypt.hash(pass, 12);
 }
 
 export async function verifyPassword(pass: string, hash: string): Promise<boolean> {
